@@ -1,4 +1,5 @@
-/reference-mods/*
+/reference-mods
+/docs
 
 # Gradle / build output
 /build
