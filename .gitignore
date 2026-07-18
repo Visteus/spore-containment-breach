@@ -1,1 +1,15 @@
 /reference-mods/*
+
+# Gradle / build output
+/build
+/.gradle
+/run
+
+# Local-only jars used to compile against mods with no Maven artifact (e.g. Spore) - never commit
+/libs/*
+!/libs/.gitkeep
+
+# IDE
+/.vscode
+/.idea
+*.iml
