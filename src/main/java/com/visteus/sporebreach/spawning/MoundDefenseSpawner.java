@@ -28,15 +28,22 @@ public final class MoundDefenseSpawner {
     private MoundDefenseSpawner() {
     }
 
-    public static boolean isEligible(Mound mound) {
+    public static OrganoidEligibility checkEligibility(Mound mound) {
         if (!(mound.level() instanceof ServerLevel level)) {
-            return false;
+            return OrganoidEligibility.INVALID_LEVEL;
         }
         if (SpawnAnchors.isWithinProtectedSpawnRadius(level, mound.getOnPos())) {
-            return false;
+            return OrganoidEligibility.PROTECTED_SPAWN_RADIUS;
         }
         long readyAt = mound.getPersistentData().getLong(COOLDOWN_KEY);
-        return level.getGameTime() >= readyAt;
+        if (level.getGameTime() < readyAt) {
+            return OrganoidEligibility.ON_COOLDOWN;
+        }
+        return OrganoidEligibility.ELIGIBLE;
+    }
+
+    public static boolean isEligible(Mound mound) {
+        return checkEligibility(mound) == OrganoidEligibility.ELIGIBLE;
     }
 
     public static void attempt(Mound mound) {

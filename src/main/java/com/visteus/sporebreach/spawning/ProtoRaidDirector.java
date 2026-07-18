@@ -38,15 +38,22 @@ public final class ProtoRaidDirector {
     private ProtoRaidDirector() {
     }
 
-    public static boolean isEligible(Proto proto) {
+    public static OrganoidEligibility checkEligibility(Proto proto) {
         if (!(proto.level() instanceof ServerLevel level)) {
-            return false;
+            return OrganoidEligibility.INVALID_LEVEL;
         }
         if (SpawnAnchors.isWithinProtectedSpawnRadius(level, proto.getOnPos())) {
-            return false;
+            return OrganoidEligibility.PROTECTED_SPAWN_RADIUS;
         }
         long readyAt = proto.getPersistentData().getLong(COOLDOWN_KEY);
-        return level.getGameTime() >= readyAt;
+        if (level.getGameTime() < readyAt) {
+            return OrganoidEligibility.ON_COOLDOWN;
+        }
+        return OrganoidEligibility.ELIGIBLE;
+    }
+
+    public static boolean isEligible(Proto proto) {
+        return checkEligibility(proto) == OrganoidEligibility.ELIGIBLE;
     }
 
     public static void attempt(Proto proto) {
