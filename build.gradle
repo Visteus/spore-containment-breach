@@ -44,6 +44,11 @@ repositories {
         name = 'NeoForged'
         url = 'https://maven.neoforged.net/releases'
     }
+    maven {
+        name = 'CurseMaven'
+        url = 'https://www.cursemaven.com'
+        content { includeGroup 'curse.maven' }
+    }
 }
 
 neoForge {
@@ -69,13 +74,14 @@ neoForge {
 }
 
 dependencies {
-    // TODO: compile against Spore's classes once we start calling into its Java API. Spore is
-    // CurseForge-only (no Maven artifact yet), so that will need either a CurseMaven coordinate or
-    // a local jar dropped in libs/ (flatDir repo) - NOT reference-mods/, which is decompile-only
-    // and must never be wired into the build. Spore is already declared as a required runtime
-    // dependency in neoforge.mods.toml.
+    // Spore is CurseForge-only (no direct Maven artifact), resolved via CurseMaven. The numeric
+    // project/file ids live in gradle.properties so bumping the Spore version later is a
+    // one-line diff. Spore is also declared as a required runtime dependency in
+    // neoforge.mods.toml - this is the compile-time counterpart.
+    implementation "curse.maven:spore-${spore_curse_project_id}:${spore_curse_file_id}"
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:deprecation'
 }

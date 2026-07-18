@@ -1,0 +1,20 @@
+{
+  "values": [
+    "spore:reconstructor",
+    "spore:sieger",
+    "spore:sieger_tail",
+    "spore:gazenbreacher",
+    "spore:kraken",
+    "spore:stahl",
+    "spore:stahl_arm",
+    "spore:hindenburg",
+    "spore:howitzer",
+    "spore:howit_arm",
+    "spore:verfall",
+    "spore:verfall_head",
+    "spore:hohlfresser",
+    "spore:hohlfresser_seg",
+    "spore:leviathan",
+    "spore:leviathan_seg"
+  ]
+}
