@@ -78,6 +78,8 @@ public final class SporeBreachServerConfig {
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
+        builder.push("systems");
+
         builder.push("world");
         PROTECTED_SPAWN_RADIUS_CHUNKS = builder
                 .comment(" No spore structures will spawn within this many chunks of world spawn.",
@@ -94,6 +96,88 @@ public final class SporeBreachServerConfig {
                         " Default 3.")
                 .defineInRange("directorBudgetPerCycle", 3, 1, Integer.MAX_VALUE);
         builder.pop();
+
+        builder.push("corruption");
+        CORRUPTION_ENABLED = builder
+                .comment(" Master toggle for the World Corruption system. Default true.")
+                .define("enabled", true);
+        CORRUPTION_CAP = builder
+                .comment(" Hard ceiling for a dimension's World Corruption value. Default 1000.")
+                .defineInRange("cap", 1000, 1, Integer.MAX_VALUE);
+        CORRUPTION_PER_MOUND_CREATED = builder
+                .comment(" Corruption added when a new Mound is created. Default 5.")
+                .defineInRange("perMoundCreated", 5, 0, Integer.MAX_VALUE);
+        CORRUPTION_PER_MOUND_AGE_UP = builder
+                .comment(" Corruption added per Mound age-up. Default 5.")
+                .defineInRange("perMoundAgeUp", 5, 0, Integer.MAX_VALUE);
+        CORRUPTION_PER_PROTO_CREATED = builder
+                .comment(" Corruption added when a new Proto-Hivemind is created. Default 20.")
+                .defineInRange("perProtoCreated", 20, 0, Integer.MAX_VALUE);
+        CORRUPTION_PER_PROTO_AGE_UP = builder
+                .comment(" Corruption added per Proto-Hivemind age-up. Default 20.")
+                .defineInRange("perProtoAgeUp", 20, 0, Integer.MAX_VALUE);
+        CORRUPTION_AGE_SCAN_INTERVAL_TICKS = builder
+                .comment(" How often (in ticks) Mounds and Proto-Hiveminds are checked for age-ups. Default 1200 (1 min).")
+                .defineInRange("ageScanIntervalTicks", 1200, 20, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_RAIDS = builder
+                .comment(" Corruption value at which Proto-Hiveminds can target raids at players. Default 100.")
+                .defineInRange("breakpointRaids", 100, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_INSTANT_EVOLUTION = builder
+                .comment(" Corruption value at which newly spawned Infected may instantly evolve. Default 150.")
+                .defineInRange("breakpointInstantEvolution", 150, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_CALAMITY_WOMB = builder
+                .comment(" Corruption value at which Calamities and Wombs can spawn, and new Infected gear gets",
+                        " at least 1 enchantment per piece. Default 250.")
+                .defineInRange("breakpointCalamityWomb", 250, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_CALAMITY_RAIDS = builder
+                .comment(" Corruption value at which Proto raids may include Calamities. Default 500.")
+                .defineInRange("breakpointCalamityRaids", 500, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_ADAPTATIONS = builder
+                .comment(" Corruption value at which spawned Calamities gain their Adaptation. Default 650.")
+                .defineInRange("breakpointAdaptations", 650, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_LINKED_SPAWNS = builder
+                .comment(" Corruption value at which all applicable spore mobs spawn as Linked. Default 850.")
+                .defineInRange("breakpointLinkedSpawns", 850, 0, Integer.MAX_VALUE);
+        builder.pop();
+
+        builder.push("chunkloading");
+        CHUNKLOAD_RECHECK_INTERVAL_TICKS = builder
+                .comment(" How often (in ticks) chunkloading organoids are rechecked for growth. Default 200 (10s).")
+                .defineInRange("chunkloadRecheckIntervalTicks", 200, 20, Integer.MAX_VALUE);
+        CHUNKLOAD_ENTITY_OWNERS = builder
+                .comment(" Entities that chunkload around themselves, growing from a starting radius to a max",
+                        " radius (radius=1 is a 3x3 area) as they age. tickingRadius is the inner radius that",
+                        " keeps actively simulating; chunks beyond it out to the current radius stay loaded but",
+                        " idle. All radii are clamped to 1-10.",
+                        " Format: \"entityId|minRadius|maxRadius|tickingRadius|ticksToMaxRadius\"."
+                )
+                .defineListAllowEmpty(
+                        "chunkloadEntityOwners",
+                        () -> Lists.newArrayList(
+                                "spore:mound|1|3|1|54000",
+                                "spore:proto|3|7|2|144000"
+                        ),
+                        () -> "modid:entity_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius",
+                        o -> o instanceof String
+                );
+        CHUNKLOAD_BLOCK_OWNERS = builder
+                .comment(" Same format as chunkloadEntityOwners, keyed by block id instead. Empty by default.")
+                .defineListAllowEmpty(
+                        "chunkloadBlockOwners", Lists::newArrayList,
+                        () -> "modid:block_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius", o -> o instanceof String
+                );
+        builder.pop();
+
+        builder.push("structures");
+        STRUCTURE_ANCHOR_SEARCH_RADIUS = builder
+                .comment(" Radius (blocks) searched for a nearby structure to anchor to before falling back to",
+                        " the organoid's own position. Default 8.")
+                .defineInRange("structureAnchorSearchRadius", 8, 0, Integer.MAX_VALUE);
+        builder.pop();
+
+        builder.pop();
+
+        builder.push("mobs");
 
         builder.push("mound");
         MOUND_DEFENDER_COOLDOWN_TICKS = builder
@@ -264,77 +348,6 @@ public final class SporeBreachServerConfig {
                 .defineInRange("protoWombSignalCooldownTicks", 3000, 0, Integer.MAX_VALUE);
         builder.pop();
 
-        builder.push("corruption");
-        CORRUPTION_ENABLED = builder
-                .comment(" Master toggle for the World Corruption system. Default true.")
-                .define("enabled", true);
-        CORRUPTION_CAP = builder
-                .comment(" Hard ceiling for a dimension's World Corruption value. Default 1000.")
-                .defineInRange("cap", 1000, 1, Integer.MAX_VALUE);
-        CORRUPTION_PER_MOUND_CREATED = builder
-                .comment(" Corruption added when a new Mound is created. Default 5.")
-                .defineInRange("perMoundCreated", 5, 0, Integer.MAX_VALUE);
-        CORRUPTION_PER_MOUND_AGE_UP = builder
-                .comment(" Corruption added per Mound age-up. Default 5.")
-                .defineInRange("perMoundAgeUp", 5, 0, Integer.MAX_VALUE);
-        CORRUPTION_PER_PROTO_CREATED = builder
-                .comment(" Corruption added when a new Proto-Hivemind is created. Default 20.")
-                .defineInRange("perProtoCreated", 20, 0, Integer.MAX_VALUE);
-        CORRUPTION_PER_PROTO_AGE_UP = builder
-                .comment(" Corruption added per Proto-Hivemind age-up. Default 20.")
-                .defineInRange("perProtoAgeUp", 20, 0, Integer.MAX_VALUE);
-        CORRUPTION_AGE_SCAN_INTERVAL_TICKS = builder
-                .comment(" How often (in ticks) Mounds and Proto-Hiveminds are checked for age-ups. Default 1200 (1 min).")
-                .defineInRange("ageScanIntervalTicks", 1200, 20, Integer.MAX_VALUE);
-        CORRUPTION_BREAKPOINT_RAIDS = builder
-                .comment(" Corruption value at which Proto-Hiveminds can target raids at players. Default 100.")
-                .defineInRange("breakpointRaids", 100, 0, Integer.MAX_VALUE);
-        CORRUPTION_BREAKPOINT_INSTANT_EVOLUTION = builder
-                .comment(" Corruption value at which newly spawned Infected may instantly evolve. Default 150.")
-                .defineInRange("breakpointInstantEvolution", 150, 0, Integer.MAX_VALUE);
-        CORRUPTION_BREAKPOINT_CALAMITY_WOMB = builder
-                .comment(" Corruption value at which Calamities and Wombs can spawn, and new Infected gear gets",
-                        " at least 1 enchantment per piece. Default 250.")
-                .defineInRange("breakpointCalamityWomb", 250, 0, Integer.MAX_VALUE);
-        CORRUPTION_BREAKPOINT_CALAMITY_RAIDS = builder
-                .comment(" Corruption value at which Proto raids may include Calamities. Default 500.")
-                .defineInRange("breakpointCalamityRaids", 500, 0, Integer.MAX_VALUE);
-        CORRUPTION_BREAKPOINT_ADAPTATIONS = builder
-                .comment(" Corruption value at which spawned Calamities gain their Adaptation. Default 650.")
-                .defineInRange("breakpointAdaptations", 650, 0, Integer.MAX_VALUE);
-        CORRUPTION_BREAKPOINT_LINKED_SPAWNS = builder
-                .comment(" Corruption value at which all applicable spore mobs spawn as Linked. Default 850.")
-                .defineInRange("breakpointLinkedSpawns", 850, 0, Integer.MAX_VALUE);
-        builder.pop();
-
-        builder.push("chunkloading");
-        CHUNKLOAD_RECHECK_INTERVAL_TICKS = builder
-                .comment(" How often (in ticks) chunkloading organoids are rechecked for growth. Default 200 (10s).")
-                .defineInRange("chunkloadRecheckIntervalTicks", 200, 20, Integer.MAX_VALUE);
-        CHUNKLOAD_ENTITY_OWNERS = builder
-                .comment(" Entities that chunkload around themselves, growing from a starting radius to a max",
-                        " radius (radius=1 is a 3x3 area) as they age. tickingRadius is the inner radius that",
-                        " keeps actively simulating; chunks beyond it out to the current radius stay loaded but",
-                        " idle. All radii are clamped to 1-10.",
-                        " Format: \"entityId|minRadius|maxRadius|tickingRadius|ticksToMaxRadius\"."
-                )
-                .defineListAllowEmpty(
-                        "chunkloadEntityOwners",
-                        () -> Lists.newArrayList(
-                                "spore:mound|1|3|1|54000",
-                                "spore:proto|3|7|2|144000"
-                        ),
-                        () -> "modid:entity_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius",
-                        o -> o instanceof String
-                );
-        CHUNKLOAD_BLOCK_OWNERS = builder
-                .comment(" Same format as chunkloadEntityOwners, keyed by block id instead. Empty by default.")
-                .defineListAllowEmpty(
-                        "chunkloadBlockOwners", Lists::newArrayList,
-                        () -> "modid:block_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius", o -> o instanceof String
-                );
-        builder.pop();
-
         builder.push("calamity");
         CALAMITY_CAP_ENABLED = builder
                 .comment(" Master toggle for the global Calamity cap. Default true.")
@@ -345,11 +358,6 @@ public final class SporeBreachServerConfig {
                 .defineInRange("calamityCap", 6, 0, Integer.MAX_VALUE);
         builder.pop();
 
-        builder.push("structures");
-        STRUCTURE_ANCHOR_SEARCH_RADIUS = builder
-                .comment(" Radius (blocks) searched for a nearby structure to anchor to before falling back to",
-                        " the organoid's own position. Default 8.")
-                .defineInRange("structureAnchorSearchRadius", 8, 0, Integer.MAX_VALUE);
         builder.pop();
 
         SPEC = builder.build();
