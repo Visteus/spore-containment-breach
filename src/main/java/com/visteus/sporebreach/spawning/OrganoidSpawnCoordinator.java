@@ -74,7 +74,7 @@ public final class OrganoidSpawnCoordinator {
             if (reason == OrganoidEligibility.ELIGIBLE) {
                 eligible.add(proto);
             } else {
-                logger.debug(
+                LOGGER.debug(
                         "spore_containment_breach: Proto at {} excluded from cycle - {}",
                         proto.getOnPos(), reason
                 );
@@ -82,7 +82,7 @@ public final class OrganoidSpawnCoordinator {
         }
         if (eligible.isEmpty()) {
             if (!mounds.isEmpty() || !protos.isEmpty()) {
-                logger.debug(
+                LOGGER.debug(
                         "spore_containment_breach: cycle in {} - 0 eligible organoid(s) out of {} tracked",
                         level.dimension().location(), mounds.size() + protos.size()
                 );
@@ -93,7 +93,7 @@ public final class OrganoidSpawnCoordinator {
         eligible.sort(Comparator.comparingDouble(organoid -> nearestPlayerDistanceSqr(organoid, players)));
 
         int budget = SporeBreachServerConfig.COORDINATOR_BUDGET_PER_CYCLE.get();
-        logger.debug(
+        LOGGER.debug(
                 "spore_containment_breach: cycle in {} - {} eligible organoid(s) out of {} tracked, budget {}",
                 level.dimension().location(), eligible.size(), mounds.size() + protos.size(), budget
         );
@@ -101,7 +101,7 @@ public final class OrganoidSpawnCoordinator {
             Organoid organoid = eligible.get(i);
             double dist = Math.sqrt(nearestPlayerDistanceSqr(organoid, players));
             BlockPos pos = organoid.getOnPos();
-            logger.debug(
+            LOGGER.debug(
                     "spore_containment_breach:   [{}] {} at {} - {} blocks from nearest player{}",
                     i, organoid.getClass().getSimpleName(), pos, String.format("%.1f", dist),
                     i < budget ? " -> DISPATCHED" : " (skipped, over budget)"

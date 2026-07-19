@@ -3,6 +3,7 @@ package com.visteus.sporebreach.config;
 import com.google.common.collect.Lists;
 import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec.BooleanValue;
 import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
 import net.neoforged.neoforge.common.ModConfigSpec.IntValue;
 
@@ -29,6 +30,13 @@ public final class SporeBreachServerConfig {
     public static final ConfigValue<List<? extends String>> PROTO_CALAMITY_SPAWN_POOL;
 
     public static final IntValue STRUCTURE_ANCHOR_SEARCH_RADIUS;
+
+    public static final BooleanValue MOUND_GENESIS_ENABLED;
+    public static final IntValue MOUND_GENESIS_SCAN_INTERVAL_TICKS;
+    public static final ConfigValue<List<? extends String>> MOUND_GENESIS_ELIGIBLE_STRUCTURES;
+    public static final IntValue MOUND_GENESIS_COUNT_MIN;
+    public static final IntValue MOUND_GENESIS_COUNT_MAX;
+    public static final IntValue MOUND_GENESIS_PLACEMENT_RADIUS;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -89,6 +97,55 @@ public final class SporeBreachServerConfig {
                         () -> "modid:entity_id|weight|min|max",
                         o -> o instanceof String
                 );
+
+        builder.push("spawning");
+        MOUND_GENESIS_ENABLED = builder
+                .comment("Should Mounds genesis-spawn at eligible structures at all? Default true.")
+                .define("enabled", true);
+        MOUND_GENESIS_SCAN_INTERVAL_TICKS = builder
+                .comment(
+                        "How often (in ticks) the genesis director checks online players' positions for",
+                        "newly-discovered eligible structures. Cheap per-check (reads already-cached",
+                        "structure references, doesn't force generation). Default 40 (2s)."
+                )
+                .defineInRange("scanIntervalTicks", 40, 20, Integer.MAX_VALUE);
+        MOUND_GENESIS_ELIGIBLE_STRUCTURES = builder
+                .comment(
+                        "Structures a Mound may genesis-spawn at, the first time a player comes near one.",
+                        "Each entry is either \"#namespace:path\" (a structure tag) or \"namespace:path\"",
+                        "(a single structure id). Default covers all 12 wiki-documented Spore structures."
+                )
+                .defineListAllowEmpty(
+                        "eligibleStructures",
+                        () -> Lists.newArrayList(
+                                "#spore:laboratories",
+                                "#spore:churches",
+                                "spore:cell",
+                                "spore:celltower",
+                                "spore:iceberg_mines",
+                                "spore:lodge",
+                                "spore:mass_grave"
+                        ),
+                        () -> "#namespace:tag_path or namespace:structure_id",
+                        o -> o instanceof String
+                );
+        MOUND_GENESIS_COUNT_MIN = builder
+                .comment(
+                        "Minimum number of Mounds a single structure instance's one-time genesis event",
+                        "produces. Default 1."
+                )
+                .defineInRange("countMin", 1, 0, Integer.MAX_VALUE);
+        MOUND_GENESIS_COUNT_MAX = builder
+                .comment("Maximum number of Mounds a genesis event produces. Default 1.")
+                .defineInRange("countMax", 1, 0, Integer.MAX_VALUE);
+        MOUND_GENESIS_PLACEMENT_RADIUS = builder
+                .comment(
+                        "Radius (blocks) around a structure's bounding-box center to search for valid ground",
+                        "to place each genesis Mound. Default 16."
+                )
+                .defineInRange("placementRadius", 16, 0, Integer.MAX_VALUE);
+        builder.pop();
+
         builder.pop();
 
         builder.push("proto");
