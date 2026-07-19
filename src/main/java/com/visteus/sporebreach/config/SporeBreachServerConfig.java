@@ -57,6 +57,9 @@ public final class SporeBreachServerConfig {
     public static final ConfigValue<List<? extends String>> CHUNKLOAD_ENTITY_OWNERS;
     public static final ConfigValue<List<? extends String>> CHUNKLOAD_BLOCK_OWNERS;
 
+    public static final BooleanValue CALAMITY_CAP_ENABLED;
+    public static final IntValue CALAMITY_CAP;
+
     public static final IntValue STRUCTURE_ANCHOR_SEARCH_RADIUS;
 
     public static final BooleanValue MOUND_GENESIS_ENABLED;
@@ -377,6 +380,19 @@ public final class SporeBreachServerConfig {
                         "chunkloadBlockOwners", Lists::newArrayList,
                         () -> "modid:block_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius", o -> o instanceof String
                 );
+        builder.pop();
+
+        builder.push("calamity");
+        CALAMITY_CAP_ENABLED = builder
+                .comment(" Master toggle for the global Calamity cap. Default true.")
+                .define("calamityCapEnabled", true);
+        CALAMITY_CAP = builder
+                .comment(
+                        " Max Calamities allowed to exist at once, across every dimension. Once at/over this,",
+                        " a newly-joining Calamity triggers culling whichever tracked Calamity is currently",
+                        " furthest from any player. Default 6."
+                )
+                .defineInRange("calamityCap", 6, 0, Integer.MAX_VALUE);
         builder.pop();
 
         builder.push("structures");
