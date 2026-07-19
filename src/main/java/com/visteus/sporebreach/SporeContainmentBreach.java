@@ -1,6 +1,7 @@
 package com.visteus.sporebreach;
 
 import com.visteus.sporebreach.config.SporeBreachClientConfig;
+import com.visteus.sporebreach.config.SporeBreachCommonConfig;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -13,6 +14,7 @@ public class SporeContainmentBreach {
     public static final String MODID = "spore_containment_breach";
 
     public SporeContainmentBreach(IEventBus modBus, ModContainer modContainer) {
+        modContainer.registerConfig(Type.COMMON, SporeBreachCommonConfig.SPEC);
         modContainer.registerConfig(Type.SERVER, SporeBreachServerConfig.SPEC);
         modContainer.registerConfig(Type.CLIENT, SporeBreachClientConfig.SPEC);
     }
