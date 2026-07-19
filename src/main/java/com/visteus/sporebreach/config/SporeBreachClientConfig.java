@@ -14,8 +14,7 @@ public final class SporeBreachClientConfig {
         builder.push("debug");
         DEBUG_OVERLAY_ENABLED = builder
                 .comment(
-                        "Renders organoid cooldowns and search/raid radii client-side for spawning QA.",
-                        "Default false."
+                        " Shows organoid cooldowns and search/raid radii on-screen. Default false."
                 )
                 .define("debugOverlayEnabled", false);
         builder.pop();
