@@ -4,6 +4,7 @@
   "package": "com.visteus.sporebreach.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "ProtoMixin"
+    "ProtoMixin",
+    "ScamperMixin"
   ]
 }

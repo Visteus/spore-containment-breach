@@ -68,6 +68,13 @@ public final class SporeBreachServerConfig {
     public static final IntValue MOUND_GENESIS_COUNT_MIN;
     public static final IntValue MOUND_GENESIS_COUNT_MAX;
 
+    public static final BooleanValue ENABLE_SCAMPER_MOUND_DENSITY_GATE;
+    public static final IntValue SCAMPER_MOUND_DENSITY_RADIUS;
+    public static final IntValue SCAMPER_MOUND_MAX_NEARBY;
+    public static final IntValue SCAMPER_MOUND_SUMMON_MIN;
+    public static final IntValue SCAMPER_MOUND_SUMMON_MAX;
+    public static final IntValue SCAMPER_MOUND_SUMMON_RANGE;
+
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
@@ -147,6 +154,32 @@ public final class SporeBreachServerConfig {
                 .defineInRange("countMax", 1, 0, Integer.MAX_VALUE);
         builder.pop();
 
+        builder.pop();
+
+        builder.push("scamper");
+        ENABLE_SCAMPER_MOUND_DENSITY_GATE = builder
+                .comment(" Limits how many Mounds a Scamper can spawn into an already-crowded area when it ages",
+                        " up into one. Default true.")
+                .define("enableScamperMoundDensityGate", true);
+        SCAMPER_MOUND_DENSITY_RADIUS = builder
+                .comment(" Radius (blocks) around a Scamper's age-up point checked for existing Mounds before",
+                        " allowing it to spawn new ones. Default 16.")
+                .defineInRange("scamperMoundDensityRadius", 16, 0, Integer.MAX_VALUE);
+        SCAMPER_MOUND_MAX_NEARBY = builder
+                .comment(" Max Mounds allowed within scamperMoundDensityRadius before a Scamper's age-up spawns",
+                        " no new Mounds at all. Default 1.")
+                .defineInRange("scamperMoundMaxNearby", 1, 0, Integer.MAX_VALUE);
+        SCAMPER_MOUND_SUMMON_MIN = builder
+                .comment(" Minimum Mounds placed by a Scamper age-up that passes the density check. Default 1.")
+                .defineInRange("scamperMoundSummonMin", 1, 1, Integer.MAX_VALUE);
+        SCAMPER_MOUND_SUMMON_MAX = builder
+                .comment(" Maximum Mounds placed by a Scamper age-up that passes the density check. Should be >=",
+                        " scamperMoundSummonMin. Default 1.")
+                .defineInRange("scamperMoundSummonMax", 1, 1, Integer.MAX_VALUE);
+        SCAMPER_MOUND_SUMMON_RANGE = builder
+                .comment(" Horizontal radius (blocks) within which a Scamper's age-up places its new Mounds.",
+                        " Default 6.")
+                .defineInRange("scamperMoundSummonRange", 6, 0, Integer.MAX_VALUE);
         builder.pop();
 
         builder.push("proto");
