@@ -9,5 +9,6 @@ public enum OrganoidEligibility {
     ELIGIBLE,
     INVALID_LEVEL,
     PROTECTED_SPAWN_RADIUS,
-    ON_COOLDOWN
+    ON_COOLDOWN,
+    CORRUPTION_TOO_LOW
 }

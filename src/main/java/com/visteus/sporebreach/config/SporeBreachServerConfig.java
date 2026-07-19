@@ -28,6 +28,22 @@ public final class SporeBreachServerConfig {
     public static final IntValue PROTO_RAID_GROUP_SIZE_MAX;
     public static final ConfigValue<List<? extends String>> PROTO_RAID_SPAWN_POOL;
     public static final ConfigValue<List<? extends String>> PROTO_CALAMITY_SPAWN_POOL;
+    public static final IntValue PROTO_AGE_UP_INTERVAL_TICKS;
+    public static final IntValue PROTO_MAX_AGE;
+
+    public static final BooleanValue CORRUPTION_ENABLED;
+    public static final IntValue CORRUPTION_CAP;
+    public static final IntValue CORRUPTION_PER_MOUND_CREATED;
+    public static final IntValue CORRUPTION_PER_MOUND_AGE_UP;
+    public static final IntValue CORRUPTION_PER_PROTO_CREATED;
+    public static final IntValue CORRUPTION_PER_PROTO_AGE_UP;
+    public static final IntValue CORRUPTION_AGE_SCAN_INTERVAL_TICKS;
+    public static final IntValue CORRUPTION_BREAKPOINT_RAIDS;
+    public static final IntValue CORRUPTION_BREAKPOINT_INSTANT_EVOLUTION;
+    public static final IntValue CORRUPTION_BREAKPOINT_CALAMITY_WOMB;
+    public static final IntValue CORRUPTION_BREAKPOINT_CALAMITY_RAIDS;
+    public static final IntValue CORRUPTION_BREAKPOINT_ADAPTATIONS;
+    public static final IntValue CORRUPTION_BREAKPOINT_LINKED_SPAWNS;
 
     public static final IntValue CHUNKLOAD_RECHECK_INTERVAL_TICKS;
     public static final ConfigValue<List<? extends String>> CHUNKLOAD_ENTITY_OWNERS;
@@ -194,6 +210,68 @@ public final class SporeBreachServerConfig {
                 .defineListAllowEmpty(
                         "protoCalamitySpawnPool", Lists::newArrayList, () -> "modid:entity_id|weight|min|max", o -> o instanceof String
                 );
+        PROTO_AGE_UP_INTERVAL_TICKS = builder
+                .comment(
+                        " Ticks between Proto-Hivemind age-levels. Unlike Mound, base Spore gives Proto no age of",
+                        " its own, so this mod tracks one itself (see ProtoAgeTracker), starting at 0 when a Proto",
+                        " is created. Default 18000 (15 min), matching the pace Mounds age at."
+                )
+                .defineInRange("protoAgeUpIntervalTicks", 18000, 20, Integer.MAX_VALUE);
+        PROTO_MAX_AGE = builder
+                .comment(
+                        " Caps how many times a single Proto-Hivemind's tracked age can increase. Generous rather",
+                        " than tight (unlike Mound's fixed 0-4), since an old Proto is meant to keep aging if left",
+                        " alive. Default 20."
+                )
+                .defineInRange("protoMaxAge", 20, 0, Integer.MAX_VALUE);
+        builder.pop();
+
+        builder.push("corruption");
+        CORRUPTION_ENABLED = builder
+                .comment(" Master toggle for the World Corruption system. Default true.")
+                .define("enabled", true);
+        CORRUPTION_CAP = builder
+                .comment(" Hard ceiling for a dimension's corruption value; increments clamp here. Default 1000.")
+                .defineInRange("cap", 1000, 1, Integer.MAX_VALUE);
+        CORRUPTION_PER_MOUND_CREATED = builder
+                .comment(" Corruption added when a new Mound is created. Default 5.")
+                .defineInRange("perMoundCreated", 5, 0, Integer.MAX_VALUE);
+        CORRUPTION_PER_MOUND_AGE_UP = builder
+                .comment(" Corruption added per age-level a Mound gains (Mound's own age, 0-4). Default 5.")
+                .defineInRange("perMoundAgeUp", 5, 0, Integer.MAX_VALUE);
+        CORRUPTION_PER_PROTO_CREATED = builder
+                .comment(" Corruption added when a new Proto-Hivemind is created. Default 20.")
+                .defineInRange("perProtoCreated", 20, 0, Integer.MAX_VALUE);
+        CORRUPTION_PER_PROTO_AGE_UP = builder
+                .comment(" Corruption added per age-level a Proto-Hivemind gains. Default 20.")
+                .defineInRange("perProtoAgeUp", 20, 0, Integer.MAX_VALUE);
+        CORRUPTION_AGE_SCAN_INTERVAL_TICKS = builder
+                .comment(" How often (in ticks) Mounds/Protos are checked for age increases. Default 1200 (1 min), min 20.")
+                .defineInRange("ageScanIntervalTicks", 1200, 20, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_RAIDS = builder
+                .comment(" Corruption value at which Proto-Hivemind can target raids at Players (beyond existing Signal system). Default 100.")
+                .defineInRange("breakpointRaids", 100, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_INSTANT_EVOLUTION = builder
+                .comment(" Corruption value at which newly spawned Infected may instantly evolve. Default 150.")
+                .defineInRange("breakpointInstantEvolution", 150, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_CALAMITY_WOMB = builder
+                .comment(
+                        " Corruption value at which Calamities and Wombs may be created/spawned, and newly",
+                        " spawned Infected gear gets at least 1 enchantment per piece. Default 250."
+                )
+                .defineInRange("breakpointCalamityWomb", 250, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_CALAMITY_RAIDS = builder
+                .comment(
+                        " Corruption value at which Proto raids may include Calamities. Roughly double",
+                        " breakpointCalamityWomb by default, but independently configurable. Default 500."
+                )
+                .defineInRange("breakpointCalamityRaids", 500, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_ADAPTATIONS = builder
+                .comment(" Corruption value at which spawned Calamities activate their Adaptation. Default 650.")
+                .defineInRange("breakpointAdaptations", 650, 0, Integer.MAX_VALUE);
+        CORRUPTION_BREAKPOINT_LINKED_SPAWNS = builder
+                .comment(" Corruption value at which all applicable spore mobs spawn as Linked. Default 850.")
+                .defineInRange("breakpointLinkedSpawns", 850, 0, Integer.MAX_VALUE);
         builder.pop();
 
         builder.push("chunkloading");

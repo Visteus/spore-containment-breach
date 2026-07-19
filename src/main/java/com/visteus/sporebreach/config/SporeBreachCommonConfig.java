@@ -8,6 +8,7 @@ public final class SporeBreachCommonConfig {
     public static final ModConfigSpec SPEC;
 
     public static final BooleanValue SUPPRESS_VANILLA_SPORE_SPAWNS;
+    public static final BooleanValue NEUTRALIZE_PROTO_WORLD_MODIFIER;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -15,17 +16,20 @@ public final class SporeBreachCommonConfig {
         builder.push("spawning");
         SUPPRESS_VANILLA_SPORE_SPAWNS = builder
                 .comment(
-                        " If true, clears Spore's own biome/structure spawn-injection lists",
-                        " (SConfig.SERVER.spawns and structure_spawns) during common setup, so vanilla",
-                        " natural spawning no longer places Spore mobs in dark areas. Organoid-driven",
-                        " spawning (Mounds/Proto-Hiveminds) is unaffected by this toggle.",
-                        " Lives in this common config (not -server) because it must run during",
-                        " FMLCommonSetupEvent, before Spore's biome/structure modifiers bake vanilla",
-                        " spawn tables - Type.SERVER specs load too late for that.",
-                        " Applied once at startup - requires a game restart to take effect.",
+                        " If true, removes Spore's own spawns from the worldgen spawn table, so that this mod's",
+                        " own spawn system is the only one that can spawn Spore mobs.",
                         " Default true."
                 )
                 .define("suppressVanillaSporeSpawns", true);
+        builder.pop();
+
+        builder.push("corruption");
+        NEUTRALIZE_PROTO_WORLD_MODIFIER = builder
+                .comment(
+                        " If true, replaces Spore's Proto World modifier with the custom World Corruption system from this mod.",
+                        " Default true."
+                )
+                .define("neutralizeProtoWorldModifier", true);
         builder.pop();
 
         SPEC = builder.build();

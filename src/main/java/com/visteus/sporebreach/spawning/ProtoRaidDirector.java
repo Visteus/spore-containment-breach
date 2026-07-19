@@ -49,6 +49,9 @@ public final class ProtoRaidDirector {
         if (level.getGameTime() < readyAt) {
             return OrganoidEligibility.ON_COOLDOWN;
         }
+        if (!CorruptionGate.areRaidsAllowed(level)) {
+            return OrganoidEligibility.CORRUPTION_TOO_LOW;
+        }
         return OrganoidEligibility.ELIGIBLE;
     }
 
@@ -73,7 +76,7 @@ public final class ProtoRaidDirector {
         BlockPos targetPos = target.get();
 
         SpawnPool troops = SpawnPool.fromConfig(SporeBreachServerConfig.PROTO_RAID_SPAWN_POOL.get(), true, "protoRaidSpawnPool");
-        boolean calamityAllowed = CorruptionGate.isCalamitySpawningAllowed(level, targetPos);
+        boolean calamityAllowed = CorruptionGate.isCalamityRaidAllowed(level, targetPos);
         SpawnPool calamities = calamityAllowed
                 ? SpawnPool.fromConfig(SporeBreachServerConfig.PROTO_CALAMITY_SPAWN_POOL.get(), false, "protoCalamitySpawnPool")
                 : null;
