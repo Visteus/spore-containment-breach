@@ -193,17 +193,27 @@ public final class SporeBreachServerConfig {
         PROTO_RAID_SPAWN_POOL = builder
                 .comment(
                         " Entities a Proto-Hivemind may send on a periodic raid. Format: \"entityId|weight|min|max\".",
-                        " Calamities are stripped from this pool, as they are inserted into raids at higher World Corruption levels."
+                        " \"max\" doubles as a per-raid cap on that entity type (0 or less means unlimited) - a raid",
+                        " will never include more of one type than its cap, even if it keeps winning the weighted roll.",
+                        " Calamities are stripped from this pool, as they are inserted into raids at higher World Corruption levels.",
+                        " Default mirrors base Spore's own Vanguard reinforcement roster (vanguard_members) - mobile",
+                        " Infected troops that can actually walk a raid's search-position path to a distant target,",
+                        " rather than the emerge/burrow ambush-style Organoids (Vigil, Usurper, Umarmer, etc.) this",
+                        " pool used to default to, which barely travel at all. Vanguard is also included, with a high",
+                        " weight but capped to at most 1 per raid so it stays a rare standout rather than a swarm."
                 )
                 .defineListAllowEmpty(
                         "protoRaidSpawnPool",
                         () -> Lists.newArrayList(
-                                "spore:vigil|20|1|2",
-                                "spore:umarmed|20|1|2",
-                                "spore:usurper|20|1|2",
-                                "spore:braurei|15|1|1",
-                                "spore:verva|15|1|1",
-                                "spore:delusioner|15|1|1"
+                                "spore:vanguard|70|1|1",
+                                "spore:inf_pillager|60|1|0",
+                                "spore:inf_vindicator|40|1|0",
+                                "spore:inf_evoker|50|1|0",
+                                "spore:inf_witch|30|1|0",
+                                "spore:stalker|20|1|0",
+                                "spore:brute|20|1|0",
+                                "spore:volatile|20|1|0",
+                                "spore:mephitic|20|1|0"
                         ),
                         () -> "modid:entity_id|weight|min|max",
                         o -> o instanceof String
