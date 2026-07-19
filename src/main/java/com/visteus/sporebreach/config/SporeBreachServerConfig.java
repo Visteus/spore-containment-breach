@@ -13,6 +13,8 @@ public final class SporeBreachServerConfig {
 
     public static final IntValue PROTECTED_SPAWN_RADIUS_CHUNKS;
 
+    public static final BooleanValue SUPPRESS_VANILLA_SPORE_SPAWNS;
+
     public static final IntValue DIRECTOR_TICK_INTERVAL_TICKS;
     public static final IntValue DIRECTOR_BUDGET_PER_CYCLE;
 
@@ -47,6 +49,19 @@ public final class SporeBreachServerConfig {
                         " Set to 0 to disable. Default 3."
                 )
                 .defineInRange("protectedSpawnRadiusChunks", 3, 0, 64);
+        builder.pop();
+
+        builder.push("spawning");
+        SUPPRESS_VANILLA_SPORE_SPAWNS = builder
+                .comment(
+                        " If true, clears Spore's own biome/structure spawn-injection lists",
+                        " (SConfig.SERVER.spawns and structure_spawns) during common setup, so vanilla",
+                        " natural spawning no longer places Spore mobs in dark areas. Organoid-driven",
+                        " spawning (Mounds/Proto-Hiveminds) is unaffected by this toggle.",
+                        " Applied once at startup - requires a game restart to take effect.",
+                        " Default true."
+                )
+                .define("suppressVanillaSporeSpawns", true);
         builder.pop();
 
         builder.push("director");

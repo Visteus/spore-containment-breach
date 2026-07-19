@@ -2,9 +2,12 @@ package com.visteus.sporebreach.setup;
 
 import com.Harbinger.Spore.core.SConfig;
 import com.mojang.logging.LogUtils;
-import com.visteus.sporebreach.config.SporeBreachCommonConfig;
+import com.visteus.sporebreach.SporeContainmentBreach;
+import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import java.util.List;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import org.slf4j.Logger;
 
 /**
@@ -13,6 +16,7 @@ import org.slf4j.Logger;
  * mobs stop appearing via natural dark-area spawning and only appear through this mod's
  * organoid-driven spawning instead.
  */
+@EventBusSubscriber(modid = SporeContainmentBreach.MODID)
 public final class SporeSpawnSuppression {
 
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -20,8 +24,9 @@ public final class SporeSpawnSuppression {
     private SporeSpawnSuppression() {
     }
 
-    public static void onCommonSetup(FMLCommonSetupEvent event) {
-        if (!SporeBreachCommonConfig.SUPPRESS_VANILLA_SPORE_SPAWNS.get()) {
+    @SubscribeEvent
+    public static void onServerAboutToStart(ServerAboutToStartEvent event) {
+        if (!SporeBreachServerConfig.SUPPRESS_VANILLA_SPORE_SPAWNS.get()) {
             return;
         }
 
