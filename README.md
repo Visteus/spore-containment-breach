@@ -6,10 +6,15 @@ Instead of spreading from any dark place, given a bit of time, or from a single 
 *Built with help from a __local__ LLM on decompiling and creating hooks/mixins into the existing Spore mod. Dont give big tech your money if you can help it!*
 
 ## Change Summary
-### New Spawning
+### New Spawning System
 Disabled "vanilla" spawn system, so that you won't run into Infected in every cave system. Instead, you have to look out for Spore structures (configurable to include other mods' structures) as they act as the source of the infection. 
 
 Within each configured structure, at least one Flesh Mound will live, alongside its defenders. Over time it will grow a defensive structure around it, before placing a Reconstructed Mind which can grow into a Proto-Hivemind, as usual. If this happens, expect the Infection in the area to ramp up, as well as the difficulty in clearing it. 
+
+#### Calamities
+Calamities can be spawned by Proto-hiveminds as a result of Signals, just like normal. However, there's some caps in place to ensure that one push into the infection zone doesnt create crazy numbers of calamities-to-be-born.
+
+Additional changes include server-wide caps on calamities; once the cap is reached, the ones furthest from a player will be culled.
 
 ### Growing Structures, Spreading Biomes
 Similar to `Spore: Inquisition`, the infection (if left unchecked) has the potential to grow organically, creating effectively its own biome of meat and bile. Not just infecting blocks, but building heretical towers off the bodies of things unlucky enough to be nearby. This creates "fortress-like" structures where going in to clear out the infection isn't a simple feat, and some modpacks may resort to WMDs to clear out infections that crop up before they get out of hand. 

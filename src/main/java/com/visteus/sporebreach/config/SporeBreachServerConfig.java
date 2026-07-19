@@ -34,6 +34,11 @@ public final class SporeBreachServerConfig {
     public static final IntValue PROTO_AGE_UP_INTERVAL_TICKS;
     public static final IntValue PROTO_MAX_AGE;
 
+    public static final BooleanValue ENABLE_PROTO_WOMB_SIGNAL_GATE;
+    public static final IntValue PROTO_WOMB_SIGNAL_DENSITY_RADIUS;
+    public static final IntValue PROTO_WOMB_SIGNAL_MAX_NEARBY;
+    public static final IntValue PROTO_WOMB_SIGNAL_COOLDOWN_TICKS;
+
     public static final BooleanValue CORRUPTION_ENABLED;
     public static final IntValue CORRUPTION_CAP;
     public static final IntValue CORRUPTION_PER_MOUND_CREATED;
@@ -265,6 +270,31 @@ public final class SporeBreachServerConfig {
                         " alive. Default 20."
                 )
                 .defineInRange("protoMaxAge", 20, 0, Integer.MAX_VALUE);
+        ENABLE_PROTO_WOMB_SIGNAL_GATE = builder
+                .comment(
+                        " Master toggle for gating base Spore's own Signal-driven Womb summons (a kill near a",
+                        " Proto-Hivemind can trigger one) with a density check and per-Proto cooldown, so a",
+                        " string of kills can't place many Wombs in rapid succession. Default true."
+                )
+                .define("enableProtoWombSignalGate", true);
+        PROTO_WOMB_SIGNAL_DENSITY_RADIUS = builder
+                .comment(
+                        " Radius (blocks) around a Proto searched for existing Wombs before letting a Signal",
+                        " place a new one. Default 48."
+                )
+                .defineInRange("protoWombSignalDensityRadius", 48, 0, Integer.MAX_VALUE);
+        PROTO_WOMB_SIGNAL_MAX_NEARBY = builder
+                .comment(
+                        " Max Wombs allowed within protoWombSignalDensityRadius before a triggering Signal is",
+                        " dropped instead of placing another. Default 2."
+                )
+                .defineInRange("protoWombSignalMaxNearby", 2, 0, Integer.MAX_VALUE);
+        PROTO_WOMB_SIGNAL_COOLDOWN_TICKS = builder
+                .comment(
+                        " Minimum ticks between a Proto's actual Signal-driven Womb placements. Set to 0 to",
+                        " disable this cooldown. Default 3000 (2.5 min)."
+                )
+                .defineInRange("protoWombSignalCooldownTicks", 3000, 0, Integer.MAX_VALUE);
         builder.pop();
 
         builder.push("corruption");
