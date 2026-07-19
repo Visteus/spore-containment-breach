@@ -15,6 +15,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -82,11 +83,12 @@ public final class MoundGenesisDirector {
                 continue;
             }
 
-            attemptGenesis(level, start.getBoundingBox().getCenter());
+            attemptGenesis(level, start.getBoundingBox());
         }
     }
 
-    private static void attemptGenesis(ServerLevel level, BlockPos anchor) {
+    private static void attemptGenesis(ServerLevel level, BoundingBox structureBox) {
+        BlockPos anchor = structureBox.getCenter();
         if (MoundGenesisData.hasSeeded(level, anchor)) {
             return;
         }
@@ -100,7 +102,11 @@ public final class MoundGenesisDirector {
         int min = Math.min(minCount, maxCount);
         int max = Math.max(minCount, maxCount);
         int count = min + random.nextInt(max - min + 1);
-        int radius = SporeBreachServerConfig.MOUND_GENESIS_PLACEMENT_RADIUS.get();
+        // Scales with the structure instead of a flat config value: mounds should land roughly
+        // within a structure's own footprint, not wander an arbitrary fixed distance from tiny
+        // structures or hug the center of huge ones.
+        double halfExtent = (structureBox.getXSpan() + structureBox.getZSpan()) / 4.0;
+        int radius = (int) Math.round(halfExtent * 0.75);
 
         int placed = 0;
         for (int i = 0; i < count; i++) {

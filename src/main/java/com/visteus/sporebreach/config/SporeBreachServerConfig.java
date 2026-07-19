@@ -36,7 +36,6 @@ public final class SporeBreachServerConfig {
     public static final ConfigValue<List<? extends String>> MOUND_GENESIS_ELIGIBLE_STRUCTURES;
     public static final IntValue MOUND_GENESIS_COUNT_MIN;
     public static final IntValue MOUND_GENESIS_COUNT_MAX;
-    public static final IntValue MOUND_GENESIS_PLACEMENT_RADIUS;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -82,7 +81,7 @@ public final class SporeBreachServerConfig {
         MOUND_DEFENDER_SPAWN_POOL = builder
                 .comment(
                         " Entities a Mound may spawn as defenders",
-                        " Format: \"entityId|weight|min|max\".",
+                        " Format: \"entityId|weight|min|max\"."
                 )
                 .defineListAllowEmpty(
                         "moundDefenderSpawnPool",
@@ -105,7 +104,7 @@ public final class SporeBreachServerConfig {
                 )
                 .defineInRange("scanIntervalTicks", 40, 20, Integer.MAX_VALUE);
         MOUND_GENESIS_ELIGIBLE_STRUCTURES = builder
-                .comment(ll
+                .comment(
                         " Structures a Mound may genesis-spawn at, the first time a player comes near one.",
                         " Each entry is either \"#namespace:path\" (a structure tag) or \"namespace:path\" (a single structure id)."
                 )
@@ -132,12 +131,6 @@ public final class SporeBreachServerConfig {
         MOUND_GENESIS_COUNT_MAX = builder
                 .comment(" Maximum number of mounds per structure. Default 1.")
                 .defineInRange("countMax", 1, 0, Integer.MAX_VALUE);
-        MOUND_GENESIS_PLACEMENT_RADIUS = builder
-                .comment(
-                        " Radius (blocks) around a structure's bounding-box center to search for valid ground",
-                        " to place each Mound. Default 16."
-                )
-                .defineInRange("placementRadius", 16, 0, Integer.MAX_VALUE); // TODO: consider making this relative to the size of the structure's bounding box, so that larger structures can have mounds placed further away from their center.
         builder.pop();
 
         builder.pop();
