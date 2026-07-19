@@ -31,6 +31,10 @@ public final class SporeBreachServerConfig {
     public static final ConfigValue<List<? extends String>> PROTO_RAID_SPAWN_POOL;
     public static final ConfigValue<List<? extends String>> PROTO_CALAMITY_SPAWN_POOL;
 
+    public static final IntValue CHUNKLOAD_RECHECK_INTERVAL_TICKS;
+    public static final ConfigValue<List<? extends String>> CHUNKLOAD_ENTITY_OWNERS;
+    public static final ConfigValue<List<? extends String>> CHUNKLOAD_BLOCK_OWNERS;
+
     public static final IntValue STRUCTURE_ANCHOR_SEARCH_RADIUS;
 
     public static final BooleanValue MOUND_GENESIS_ENABLED;
@@ -204,6 +208,40 @@ public final class SporeBreachServerConfig {
                 )
                 .defineListAllowEmpty(
                         "protoCalamitySpawnPool", Lists::newArrayList, () -> "modid:entity_id|weight|min|max", o -> o instanceof String
+                );
+        builder.pop();
+
+        builder.push("chunkloading");
+        CHUNKLOAD_RECHECK_INTERVAL_TICKS = builder
+                .comment(" How often (in ticks) tracked owners are rechecked for chunkload growth. Default 200 (10s).")
+                .defineInRange("chunkloadRecheckIntervalTicks", 200, 20, Integer.MAX_VALUE);
+        CHUNKLOAD_ENTITY_OWNERS = builder
+                .comment(
+                        " Entities that dynamically chunkload around themselves as they age, growing from a starting",
+                        " radius up to a max radius (in chunks, radius=1 is a 3x3 area) over ticksToMaxRadius ticks.",
+                        " tickingRadius is the inner radius that stays actively simulating; chunks beyond it out to",
+                        " the current grown radius are loaded but not ticked, to avoid full mob-AI/block-tick cost",
+                        " across an organoid's whole territory. All radii are clamped to 1-10.",
+                        " Format: \"entityId|minRadius|maxRadius|tickingRadius|ticksToMaxRadius\"."
+                )
+                .defineListAllowEmpty(
+                        "chunkloadEntityOwners",
+                        () -> Lists.newArrayList(
+                                "spore:mound|1|3|1|54000",
+                                "spore:proto|3|7|2|144000"
+                        ),
+                        () -> "modid:entity_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius",
+                        o -> o instanceof String
+                );
+        CHUNKLOAD_BLOCK_OWNERS = builder
+                .comment(
+                        " Same format as chunkloadEntityOwners, keyed by block id instead. Reserved for future",
+                        " structure blocks (e.g. an \"outpost watcher\") that register themselves as chunkload owners;",
+                        " empty by default since no such block exists yet."
+                )
+                .defineListAllowEmpty(
+                        "chunkloadBlockOwners", Lists::newArrayList,
+                        () -> "modid:block_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius", o -> o instanceof String
                 );
         builder.pop();
 
