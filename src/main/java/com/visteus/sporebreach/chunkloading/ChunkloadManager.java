@@ -5,6 +5,7 @@ import com.visteus.sporebreach.SporeContainmentBreach;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -160,6 +161,31 @@ public final class ChunkloadManager {
 
     static void teardownEntityOwner(ServerLevel level, Entity entity) {
         teardown(level, new ChunkloadOwnerId.EntityOwner(entity.getUUID()));
+    }
+
+    /**
+     * Lean chunkloading for a raid party mid-transit toward a far-off target - deliberately not
+     * the anchor+grow model the rest of this class uses, since a traveling raider's position
+     * changes almost every tick. Keeps only the chunk it's currently entering and the one it just
+     * left force-loaded ("inching forward"), bypassing {@link ChunkloadData}/{@link ChunkloadState}
+     * entirely since this state isn't persisted and doesn't grow. See spawning.RaidTravelTracker/
+     * RaidTravelTrackingEvents for the caller.
+     */
+    public static void advanceRaidTravelChunk(ServerLevel level, UUID travelerId, ChunkPos newChunk, ChunkPos previousChunk) {
+        ChunkloadOwnerId ownerId = new ChunkloadOwnerId.EntityOwner(travelerId);
+        if (previousChunk != null && !previousChunk.equals(newChunk)) {
+            forceChunkForOwner(level, ownerId, previousChunk.x, previousChunk.z, false, true);
+        }
+        forceChunkForOwner(level, ownerId, newChunk.x, newChunk.z, true, true);
+    }
+
+    /**
+     * Releases a single chunk previously forced via {@link #advanceRaidTravelChunk}, e.g. on
+     * raider arrival, death, or the travel-tracking safety-timeout sweep. Takes a bare UUID
+     * (not a live {@link Entity}) since this is also called after the entity may already be gone.
+     */
+    public static void releaseRaidTravelChunk(ServerLevel level, UUID travelerId, ChunkPos chunk) {
+        forceChunkForOwner(level, new ChunkloadOwnerId.EntityOwner(travelerId), chunk.x, chunk.z, false, true);
     }
 
     private static boolean forceChunkForOwner(ServerLevel level, ChunkloadOwnerId ownerId, int chunkX, int chunkZ, boolean add, boolean ticking) {

@@ -1,18 +1,24 @@
 package com.visteus.sporebreach.spawning;
 
 import com.Harbinger.Spore.Sentities.BaseEntities.Calamity;
+import com.Harbinger.Spore.Sentities.BaseEntities.Infected;
 import com.Harbinger.Spore.Sentities.Organoids.Mound;
 import com.Harbinger.Spore.Sentities.Organoids.Proto;
 import com.Harbinger.Spore.Sentities.Organoids.Womb;
 import com.mojang.logging.LogUtils;
+import com.visteus.sporebreach.chunkloading.ChunkloadManager;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import com.visteus.sporebreach.tracking.OrganoidRegistry;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ChunkPos;
 import org.slf4j.Logger;
 
 /**
@@ -86,7 +92,7 @@ public final class ProtoRaidDirector {
         int max = Math.max(groupSize.min(), groupSize.max());
         int count = min + proto.getRandom().nextInt(max - min + 1);
 
-        boolean spawnedAny = false;
+        List<UUID> raiderIds = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             SpawnPool pool = (calamities != null && !calamities.isEmpty() && proto.getRandom().nextBoolean()) ? calamities : troops;
             if (pool.isEmpty()) {
@@ -100,13 +106,15 @@ public final class ProtoRaidDirector {
                 continue;
             }
             boolean allowCalamityHere = pool == calamities;
-            if (spawnRaider(level, proto, picked.get(), targetPos, searchRadius, allowCalamityHere)) {
-                spawnedAny = true;
-            }
+            spawnRaider(level, proto, picked.get(), targetPos, searchRadius, allowCalamityHere).ifPresent(raiderIds::add);
         }
 
-        if (!spawnedAny) {
+        if (raiderIds.isEmpty()) {
             LOGGER.debug("spore_containment_breach: Proto raid at {} found a target but placed no raiders", targetPos);
+        } else {
+            RaidRegistry.register(
+                    level, new RaidRegistry.RaidRecord(UUID.randomUUID(), proto.getUUID(), targetPos, level.getGameTime(), raiderIds)
+            );
         }
     }
 
@@ -141,17 +149,17 @@ public final class ProtoRaidDirector {
         return Optional.empty();
     }
 
-    private static boolean spawnRaider(
+    private static Optional<UUID> spawnRaider(
             ServerLevel level, Proto proto, SpawnPoolEntry entry, BlockPos target, int searchRadius, boolean calamityAllowedHere
     ) {
         Optional<BlockPos> position = SpawnAnchors.findGroundPosition(level, target, searchRadius, proto.getRandom());
         if (position.isEmpty()) {
-            return false;
+            return Optional.empty();
         }
 
         Entity spawned = entry.type().create(level);
         if (spawned == null) {
-            return false;
+            return Optional.empty();
         }
 
         boolean forbidden = spawned instanceof Womb || (!calamityAllowedHere && spawned instanceof Calamity);
@@ -162,13 +170,40 @@ public final class ProtoRaidDirector {
                     entry.type()
             );
             spawned.discard();
-            return false;
+            return Optional.empty();
         }
 
         BlockPos pos = position.get();
         RandomSource random = proto.getRandom();
         spawned.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, random.nextFloat() * 360.0F, 0.0F);
         spawned.getPersistentData().putUUID(RAID_BY_KEY, proto.getUUID());
-        return level.addFreshEntity(spawned);
+        if (!level.addFreshEntity(spawned)) {
+            return Optional.empty();
+        }
+        applyDirectedTravel(level, spawned, target);
+        return Optional.of(spawned.getUUID());
+    }
+
+    /**
+     * Points a fresh raider at the raid target instead of leaving it to idle at its spawn point.
+     * Calamities get {@code setSearchArea}, which also self-chunkloads them while traveling via
+     * base Spore's own ChunkLoaderMob handling - no further action needed there. Everything else
+     * that extends Infected gets {@code setSearchPos} (the same base-Spore "Search Positions"
+     * system Vanguard/Wombs/Linked mobs already use) plus our own lean two-chunk "inching
+     * forward" travel-chunkload window, since protoRaidSearchRadius is large enough that most
+     * targets won't already be in loaded/simulated space.
+     */
+    private static void applyDirectedTravel(ServerLevel level, Entity spawned, BlockPos target) {
+        if (!SporeBreachServerConfig.PROTO_RAID_DIRECTED_TRAVEL.get()) {
+            return;
+        }
+        if (spawned instanceof Calamity calamity) {
+            calamity.setSearchArea(target);
+        } else if (spawned instanceof Infected infected) {
+            infected.setSearchPos(target);
+            ChunkPos startChunk = new ChunkPos(spawned.blockPosition());
+            RaidTravelTracker.track(level, spawned.getUUID(), startChunk);
+            ChunkloadManager.advanceRaidTravelChunk(level, spawned.getUUID(), startChunk, null);
+        }
     }
 }

@@ -28,6 +28,9 @@ public final class SporeBreachServerConfig {
     public static final IntValue PROTO_RAID_GROUP_SIZE_MAX;
     public static final ConfigValue<List<? extends String>> PROTO_RAID_SPAWN_POOL;
     public static final ConfigValue<List<? extends String>> PROTO_CALAMITY_SPAWN_POOL;
+    public static final BooleanValue PROTO_RAID_DIRECTED_TRAVEL;
+    public static final IntValue PROTO_RAID_TRAVEL_MAX_DURATION_TICKS;
+    public static final IntValue PROTO_RAID_TRAVEL_SWEEP_INTERVAL_TICKS;
     public static final IntValue PROTO_AGE_UP_INTERVAL_TICKS;
     public static final IntValue PROTO_MAX_AGE;
 
@@ -170,8 +173,11 @@ public final class SporeBreachServerConfig {
                 )
                 .defineInRange("protoRaidCooldownMaxTicks", 72000, 20, Integer.MAX_VALUE);
         PROTO_RAID_SEARCH_RADIUS = builder
-                .comment(" Radius (blocks) to find raid targets - structure anchors or players. Default 128.")
-                .defineInRange("protoRaidSearchRadius", 128, 0, Integer.MAX_VALUE);
+                .comment(
+                        " Radius (blocks) to find raid targets - structure anchors or players.",
+                        " Default 300, matching base Spore's own Proto linking/scan range (proto_range)."
+                )
+                .defineInRange("protoRaidSearchRadius", 300, 0, Integer.MAX_VALUE);
         PROTO_RAID_GROUP_SIZE_MIN = builder
                 .comment(
                         " Baseline minimum raid group size. World Corruption level will scale this up.",
@@ -210,6 +216,31 @@ public final class SporeBreachServerConfig {
                 .defineListAllowEmpty(
                         "protoCalamitySpawnPool", Lists::newArrayList, () -> "modid:entity_id|weight|min|max", o -> o instanceof String
                 );
+        PROTO_RAID_DIRECTED_TRAVEL = builder
+                .comment(
+                        " Whether raiders are given a directed travel target toward the raid's destination right",
+                        " after spawning (Infected via setSearchPos, Calamities via setSearchArea - both reuse base",
+                        " Spore's own AI/goals), instead of appearing and idling at their spawn point. Calamities",
+                        " additionally self-chunkload while traveling via base Spore's own ChunkLoaderMob handling;",
+                        " non-Calamity raiders get a lean two-chunk 'inching forward' chunkload window from this",
+                        " mod (see protoRaidTravelMaxDurationTicks/protoRaidTravelSweepIntervalTicks). Default true."
+                )
+                .define("protoRaidDirectedTravel", true);
+        PROTO_RAID_TRAVEL_MAX_DURATION_TICKS = builder
+                .comment(
+                        " Safety cap: a non-Calamity raider being tracked for travel chunkloading longer than this",
+                        " is released and untracked regardless of whether it arrived, preventing an indefinite",
+                        " forced-chunk leak if a raider gets permanently stuck. Default 18000 (15 min)."
+                )
+                .defineInRange("protoRaidTravelMaxDurationTicks", 18000, 20, Integer.MAX_VALUE);
+        PROTO_RAID_TRAVEL_SWEEP_INTERVAL_TICKS = builder
+                .comment(
+                        " How often (in ticks) tracked traveling raiders are swept for staleness/timeout. This is",
+                        " only a cleanup pass over a small in-memory map, not the actual chunk advance/release",
+                        " (which is event-driven and unaffected by this interval), so a wide interval is fine.",
+                        " Default 6000 (5 min)."
+                )
+                .defineInRange("protoRaidTravelSweepIntervalTicks", 6000, 1200, Integer.MAX_VALUE);
         PROTO_AGE_UP_INTERVAL_TICKS = builder
                 .comment(
                         " Ticks between Proto-Hivemind age-levels. Unlike Mound, base Spore gives Proto no age of",
