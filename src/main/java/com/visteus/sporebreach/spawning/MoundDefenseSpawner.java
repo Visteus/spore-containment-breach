@@ -17,7 +17,7 @@ import org.slf4j.Logger;
  * New Goal #1 behavior: Mounds periodically spawn a small number of defensive mobs in their
  * vicinity. Base Spore's Mound has no mob-spawning logic at all (only tendril-spawning and
  * one-shot structure-block placement) - this is wholly new, dispatched by
- * OrganoidSpawnCoordinator on a per-Mound cooldown.
+ * OrganoidSpawnDirector on a per-Mound cooldown.
  */
 public final class MoundDefenseSpawner {
 

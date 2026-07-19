@@ -26,7 +26,7 @@ import org.slf4j.Logger;
  * Goal #1 "Mound genesis": the first time a player comes near an eligible pre-generated
  * structure ({@code moundGenesisEligibleStructures}), places a one-time batch of Mounds there
  * and permanently marks that structure instance as seeded ({@link MoundGenesisData}) so it
- * never spawns another. Independent of {@code OrganoidSpawnCoordinator} - that system only ever
+ * never spawns another. Independent of {@code OrganoidSpawnDirector} - that system only ever
  * dispatches organoids that already exist; this is the sole place new Mounds enter the world
  * from world generation.
  */

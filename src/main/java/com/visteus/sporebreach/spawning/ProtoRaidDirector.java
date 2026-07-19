@@ -62,7 +62,7 @@ public final class ProtoRaidDirector {
         }
 
         // Reroll the cooldown unconditionally so a Proto with no reachable target doesn't retry
-        // every coordinator cycle.
+        // every director cycle.
         rerollCooldown(proto, level);
 
         int searchRadius = SporeBreachServerConfig.PROTO_RAID_SEARCH_RADIUS.get();

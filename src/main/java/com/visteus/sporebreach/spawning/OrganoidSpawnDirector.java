@@ -20,26 +20,26 @@ import org.slf4j.Logger;
 
 /**
  * Central dispatcher for Goal #1's new organoid-driven spawning: every
- * coordinatorTickIntervalTicks, per level, gathers organoids whose own cooldown has expired,
- * sorts them closest-to-any-player first, and dispatches up to coordinatorBudgetPerCycle of them
+ * directorTickIntervalTicks, per level, gathers organoids whose own cooldown has expired,
+ * sorts them closest-to-any-player first, and dispatches up to directorBudgetPerCycle of them
  * to MoundDefenseSpawner/ProtoRaidDirector. Deliberately contains no Mound/Proto-specific spawn
  * logic itself, so Goal #2 (despawning) and Goal #4 (chunkloading) can reuse this same
  * gather/sort/budget/dispatch skeleton against the same OrganoidRegistry.
  */
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
-public final class OrganoidSpawnCoordinator {
+public final class OrganoidSpawnDirector {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static long tickCounter;
 
-    private OrganoidSpawnCoordinator() {
+    private OrganoidSpawnDirector() {
     }
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         tickCounter++;
-        int interval = SporeBreachServerConfig.COORDINATOR_TICK_INTERVAL_TICKS.get();
+        int interval = SporeBreachServerConfig.DIRECTOR_TICK_INTERVAL_TICKS.get();
         if (interval <= 0 || tickCounter % interval != 0) {
             return;
         }
@@ -92,7 +92,7 @@ public final class OrganoidSpawnCoordinator {
 
         eligible.sort(Comparator.comparingDouble(organoid -> nearestPlayerDistanceSqr(organoid, players)));
 
-        int budget = SporeBreachServerConfig.COORDINATOR_BUDGET_PER_CYCLE.get();
+        int budget = SporeBreachServerConfig.DIRECTOR_BUDGET_PER_CYCLE.get();
         LOGGER.debug(
                 "spore_containment_breach: cycle in {} - {} eligible organoid(s) out of {} tracked, budget {}",
                 level.dimension().location(), eligible.size(), mounds.size() + protos.size(), budget
