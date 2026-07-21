@@ -73,7 +73,7 @@ public final class BiomeRepaint {
             Either<Integer, CommandSyntaxException> result = FillBiomeCommand.fill(level, min, max, holder);
             if (result.right().isPresent()) {
                 LOGGER.warn(
-                        "spore_containment_breach: failed to paint chunk {} band y={}..{} to biome {}: {}",
+                        "sporebreach: failed to paint chunk {} band y={}..{} to biome {}: {}",
                         pos, bandMinY, bandMaxY, biomeKey.location(), result.right().get().getMessage()
                 );
                 allSucceeded = false;

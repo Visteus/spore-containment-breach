@@ -12,7 +12,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
- * {@code /spore_containment_breach:corruption_debug} - reports the executor's dimension's
+ * {@code /sporebreach:corruption_debug} - reports the executor's dimension's
  * current World Corruption value and which of the six gates are open, mirroring {@link
  * com.visteus.sporebreach.chunkloading.ChunkloadDebugCommand}'s precedent. Also exposes {@code
  * set}/{@code add} subcommands (both requiring permission level 2, same as the root) for jumping
@@ -27,7 +27,7 @@ public final class CorruptionDebugCommand {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
-                Commands.literal("spore_containment_breach:corruption_debug")
+                Commands.literal("sporebreach:corruption_debug")
                         .requires(source -> source.hasPermission(2))
                         .executes(CorruptionDebugCommand::report)
                         .then(
@@ -75,7 +75,7 @@ public final class CorruptionDebugCommand {
     private static void report(CommandSourceStack source, ServerLevel level) {
         int value = CorruptionData.get(level);
         source.sendSuccess(() -> Component.literal(
-                "spore_containment_breach World Corruption in " + level.dimension().location() + ": " + value
+                "sporebreach World Corruption in " + level.dimension().location() + ": " + value
         ), false);
         source.sendSuccess(() -> Component.literal(
                 "  Stage 1 (raids allowed): " + CorruptionTier.areRaidsAllowed(level)

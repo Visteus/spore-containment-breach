@@ -40,7 +40,7 @@ public final class CalamityCapEnforcer {
             }
             loaded.remove(furthest);
             LOGGER.debug(
-                    "spore_containment_breach: Calamity cap ({}) exceeded, culling furthest-from-player Calamity {} at {}",
+                    "sporebreach: Calamity cap ({}) exceeded, culling furthest-from-player Calamity {} at {}",
                     cap, furthest.getType(), furthest.blockPosition()
             );
             furthest.discard();

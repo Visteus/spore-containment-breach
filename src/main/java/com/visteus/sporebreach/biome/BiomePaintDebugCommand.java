@@ -24,7 +24,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
- * {@code /spore_containment_breach:biome_paint_debug <biome> [radiusChunks]} - Phase B throwaway
+ * {@code /sporebreach:biome_paint_debug <biome> [radiusChunks]} - Phase B throwaway
  * tool for proving {@link BiomeRepaint#paintColumn} actually reaches a connected client live (no
  * relog) before the real growth machinery in {@code BiomePaintManager} is built on top of it.
  * Paints the chunk(s) around the executor to any biome resource location, including vanilla ones
@@ -44,7 +44,7 @@ public final class BiomePaintDebugCommand {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
-                Commands.literal("spore_containment_breach:biome_paint_debug")
+                Commands.literal("sporebreach:biome_paint_debug")
                         .requires(source -> source.hasPermission(2))
                         .then(
                                 Commands.argument("biome", ResourceLocationArgument.id())
@@ -84,7 +84,7 @@ public final class BiomePaintDebugCommand {
 
         int paintedCount = painted;
         source.sendSuccess(() -> Component.literal(
-                "spore_containment_breach: painted " + paintedCount + "/" + offsets.size() + " chunk column(s) around "
+                "sporebreach: painted " + paintedCount + "/" + offsets.size() + " chunk column(s) around "
                         + center + " to " + biomeId
         ), false);
         return painted;

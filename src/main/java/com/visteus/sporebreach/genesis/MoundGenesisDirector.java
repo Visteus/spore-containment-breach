@@ -130,7 +130,7 @@ public final class MoundGenesisDirector {
         // Consume the genesis event as soon as at least one Mound landed, even if terrain only
         // had room for fewer than the rolled count - avoids retrying forever on a cramped site.
         if (placed > 0) {
-            LOGGER.debug("spore_containment_breach: genesis-placed {} Mound(s) at structure anchor {}", placed, anchor);
+            LOGGER.debug("sporebreach: genesis-placed {} Mound(s) at structure anchor {}", placed, anchor);
             MoundGenesisData.markSeeded(level, anchor);
         }
     }

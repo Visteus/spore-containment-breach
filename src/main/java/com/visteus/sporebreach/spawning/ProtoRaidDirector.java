@@ -128,13 +128,13 @@ public final class ProtoRaidDirector {
         }
 
         if (raiderIds.isEmpty()) {
-            LOGGER.debug("spore_containment_breach: Proto raid at {} found a target but placed no raiders", targetPos);
+            LOGGER.debug("sporebreach: Proto raid at {} found a target but placed no raiders", targetPos);
         } else {
             RaidRegistry.register(
                     level, new RaidRegistry.RaidRecord(UUID.randomUUID(), proto.getUUID(), targetPos, level.getGameTime(), raiderIds)
             );
             LOGGER.info(
-                    "spore_containment_breach: Proto {} at {} dispatched a raid of {} ({}) targeting {}",
+                    "sporebreach: Proto {} at {} dispatched a raid of {} ({}) targeting {}",
                     proto.getUUID(), proto.blockPosition(), raiderIds.size(), summarizeCounts(perTypeCounts), targetPos
             );
         }
@@ -248,7 +248,7 @@ public final class ProtoRaidDirector {
         boolean forbidden = spawned instanceof Womb || (!calamityAllowedHere && spawned instanceof Calamity);
         if (forbidden) {
             LOGGER.error(
-                    "spore_containment_breach: refused to let a Proto raid spawn a forbidden entity type ({}) - "
+                    "sporebreach: refused to let a Proto raid spawn a forbidden entity type ({}) - "
                             + "this indicates a bug in spawn pool filtering, please report it",
                     entry.type()
             );

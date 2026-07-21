@@ -36,7 +36,7 @@ public final class SporeBreachSaveFolder {
             Files.createDirectories(folder);
             currentWorldFolder = folder;
         } catch (IOException e) {
-            LOGGER.error("spore_containment_breach: could not create save folder {}", folder, e);
+            LOGGER.error("sporebreach: could not create save folder {}", folder, e);
             currentWorldFolder = null;
         }
     }
@@ -48,7 +48,7 @@ public final class SporeBreachSaveFolder {
 
     public static Path resolve(String fileName) {
         if (currentWorldFolder == null) {
-            throw new IllegalStateException("spore_containment_breach: save folder accessed outside a running server");
+            throw new IllegalStateException("sporebreach: save folder accessed outside a running server");
         }
         return currentWorldFolder.resolve(fileName);
     }

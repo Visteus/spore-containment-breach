@@ -193,7 +193,7 @@ public final class BiomePaintManager {
                     confirmedPainted = true;
                     consumed++;
                     LOGGER.info(
-                            "spore_containment_breach: painted chunk {} to {} for owner {}",
+                            "sporebreach: painted chunk {} to {} for owner {}",
                             task.pos(), BiomeRepaint.INFECTION_ZONE.location(), ownerId
                     );
                 } else {
@@ -302,7 +302,7 @@ public final class BiomePaintManager {
             if (ticketOwner != null) {
                 ChunkloadManager.forceBiomePaintChunk(level, ticketOwner, pos.x, pos.z, false);
             }
-            LOGGER.debug("spore_containment_breach: downgraded chunk {} to {}", pos, BiomeRepaint.DEAD_SCAR.location());
+            LOGGER.debug("sporebreach: downgraded chunk {} to {}", pos, BiomeRepaint.DEAD_SCAR.location());
         }
     }
 

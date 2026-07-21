@@ -39,7 +39,7 @@ public final class ProtoVigilRaidSuppression {
 
         SConfig.SERVER.proto_raid.set(false);
         LOGGER.info(
-                "spore_containment_breach: disabled Spore's own Proto Vigil-ambush raid "
+                "sporebreach: disabled Spore's own Proto Vigil-ambush raid "
                         + "(suppressProtoVigilRaid=true) - ProtoRaidDirector now owns raid dispatch instead"
         );
     }

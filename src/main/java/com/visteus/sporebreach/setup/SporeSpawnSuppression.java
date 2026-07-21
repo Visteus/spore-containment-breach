@@ -39,7 +39,7 @@ public final class SporeSpawnSuppression {
         SConfig.SERVER.spawns.set(List.of());
         SConfig.SERVER.structure_spawns.set(List.of());
         LOGGER.info(
-                "spore_containment_breach: cleared Spore's vanilla biome/structure spawn lists "
+                "sporebreach: cleared Spore's vanilla biome/structure spawn lists "
                         + "(suppressVanillaSporeSpawns=true) - Spore mobs will only appear via organoid-driven spawning"
         );
     }

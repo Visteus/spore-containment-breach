@@ -46,7 +46,7 @@ public final class StructureAnchorSelector {
                     ids.add(ResourceKey.create(Registries.STRUCTURE, ResourceLocation.parse(trimmed)));
                 }
             } catch (Exception e) {
-                LOGGER.warn("spore_containment_breach: invalid moundGenesisEligibleStructures entry '{}': {}", entry, e.getMessage());
+                LOGGER.warn("sporebreach: invalid moundGenesisEligibleStructures entry '{}': {}", entry, e.getMessage());
             }
         }
         return new StructureAnchorSelector(tags, ids);

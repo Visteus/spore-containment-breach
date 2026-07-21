@@ -36,7 +36,7 @@ public final class SpawnPool {
             SpawnPoolEntry.parse(rawEntry).ifPresent(entry -> {
                 if (banCalamitiesAndWombs && entry.type().is(ForbiddenSpawnTags.CALAMITIES_AND_WOMBS)) {
                     LOGGER.warn(
-                            "spore_containment_breach: stripped forbidden calamity/womb entry from {}: {}", logContext, rawEntry
+                            "sporebreach: stripped forbidden calamity/womb entry from {}: {}", logContext, rawEntry
                     );
                     return;
                 }

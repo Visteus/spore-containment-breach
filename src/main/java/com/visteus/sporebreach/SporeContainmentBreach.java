@@ -11,7 +11,7 @@ import net.neoforged.fml.config.ModConfig.Type;
 @Mod(SporeContainmentBreach.MODID)
 public class SporeContainmentBreach {
 
-    public static final String MODID = "spore_containment_breach";
+    public static final String MODID = "sporebreach";
 
     public SporeContainmentBreach(IEventBus modBus, ModContainer modContainer) {
         modContainer.registerConfig(Type.COMMON, SporeBreachCommonConfig.SPEC);

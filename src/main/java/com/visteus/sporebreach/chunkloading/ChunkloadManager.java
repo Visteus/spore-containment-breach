@@ -107,7 +107,7 @@ public final class ChunkloadManager {
                 ResourceLocation expected = state.expectedBlockId();
                 if (expected != null && !expected.equals(actualBlockId)) {
                     LOGGER.warn(
-                            "spore_containment_breach: chunkload block owner at {} no longer matches expected block {} (found {}) - tearing down",
+                            "sporebreach: chunkload block owner at {} no longer matches expected block {} (found {}) - tearing down",
                             blockOwner.pos(), expected, actualBlockId
                     );
                     teardown(level, ownerId);
@@ -202,7 +202,7 @@ public final class ChunkloadManager {
     private static boolean forceChunkForOwner(ServerLevel level, ChunkloadOwnerId ownerId, int chunkX, int chunkZ, boolean add, boolean ticking) {
         TicketController activeController = controller;
         if (activeController == null) {
-            LOGGER.warn("spore_containment_breach: chunkload ticket controller not yet registered, dropping forceChunk call");
+            LOGGER.warn("sporebreach: chunkload ticket controller not yet registered, dropping forceChunk call");
             return false;
         }
         if (ownerId instanceof ChunkloadOwnerId.EntityOwner entityOwner) {

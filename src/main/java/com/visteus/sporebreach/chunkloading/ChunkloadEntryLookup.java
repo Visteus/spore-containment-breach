@@ -53,7 +53,7 @@ public final class ChunkloadEntryLookup {
             ChunkloadEntry.parse(line).ifPresent(entry -> {
                 Optional<EntityType<?>> type = BuiltInRegistries.ENTITY_TYPE.getOptional(entry.ownerId());
                 if (type.isEmpty()) {
-                    LOGGER.warn("spore_containment_breach: unknown entity type in chunkloadEntityOwners: {}", entry.ownerId());
+                    LOGGER.warn("sporebreach: unknown entity type in chunkloadEntityOwners: {}", entry.ownerId());
                     return;
                 }
                 map.put(type.get(), entry);
@@ -73,7 +73,7 @@ public final class ChunkloadEntryLookup {
         for (String line : raw) {
             ChunkloadEntry.parse(line).ifPresent(entry -> {
                 if (!BuiltInRegistries.BLOCK.containsKey(entry.ownerId())) {
-                    LOGGER.warn("spore_containment_breach: unknown block id in chunkloadBlockOwners: {}", entry.ownerId());
+                    LOGGER.warn("sporebreach: unknown block id in chunkloadBlockOwners: {}", entry.ownerId());
                     return;
                 }
                 map.put(entry.ownerId(), entry);

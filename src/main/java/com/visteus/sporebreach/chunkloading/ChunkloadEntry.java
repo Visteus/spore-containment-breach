@@ -19,7 +19,7 @@ public record ChunkloadEntry(ResourceLocation ownerId, int minRadius, int maxRad
         String[] parts = raw.split("\\|");
         if (parts.length != 5) {
             LOGGER.warn(
-                    "spore_containment_breach: invalid chunkload entry (expected ownerId|minRadius|maxRadius|tickingRadius|ticksToMaxRadius): {}",
+                    "sporebreach: invalid chunkload entry (expected ownerId|minRadius|maxRadius|tickingRadius|ticksToMaxRadius): {}",
                     raw
             );
             return Optional.empty();
@@ -29,7 +29,7 @@ public record ChunkloadEntry(ResourceLocation ownerId, int minRadius, int maxRad
         try {
             ownerId = ResourceLocation.parse(parts[0]);
         } catch (Exception e) {
-            LOGGER.warn("spore_containment_breach: invalid owner id in chunkload entry: {}", raw);
+            LOGGER.warn("sporebreach: invalid owner id in chunkload entry: {}", raw);
             return Optional.empty();
         }
 
@@ -43,14 +43,14 @@ public record ChunkloadEntry(ResourceLocation ownerId, int minRadius, int maxRad
             tickingRadius = Integer.parseInt(parts[3]);
             ticksToMaxRadius = Integer.parseInt(parts[4]);
         } catch (NumberFormatException e) {
-            LOGGER.warn("spore_containment_breach: invalid number in chunkload entry: {}", raw);
+            LOGGER.warn("sporebreach: invalid number in chunkload entry: {}", raw);
             return Optional.empty();
         }
 
         int clampedMin = Math.max(1, Math.min(minRadius, ChunkCircleOffsets.MAX_RADIUS));
         if (clampedMin != minRadius) {
             LOGGER.warn(
-                    "spore_containment_breach: chunkload entry {} minRadius {} clamped to {} (must be 1-{})",
+                    "sporebreach: chunkload entry {} minRadius {} clamped to {} (must be 1-{})",
                     ownerId, minRadius, clampedMin, ChunkCircleOffsets.MAX_RADIUS
             );
         }
@@ -58,7 +58,7 @@ public record ChunkloadEntry(ResourceLocation ownerId, int minRadius, int maxRad
         int clampedMax = Math.max(clampedMin, Math.min(maxRadius, ChunkCircleOffsets.MAX_RADIUS));
         if (clampedMax != maxRadius) {
             LOGGER.warn(
-                    "spore_containment_breach: chunkload entry {} maxRadius {} clamped to {} (must be {}-{})",
+                    "sporebreach: chunkload entry {} maxRadius {} clamped to {} (must be {}-{})",
                     ownerId, maxRadius, clampedMax, clampedMin, ChunkCircleOffsets.MAX_RADIUS
             );
         }
@@ -66,7 +66,7 @@ public record ChunkloadEntry(ResourceLocation ownerId, int minRadius, int maxRad
         int clampedTicking = Math.max(1, Math.min(tickingRadius, clampedMax));
         if (clampedTicking != tickingRadius) {
             LOGGER.warn(
-                    "spore_containment_breach: chunkload entry {} tickingRadius {} clamped to {} (must be 1-{})",
+                    "sporebreach: chunkload entry {} tickingRadius {} clamped to {} (must be 1-{})",
                     ownerId, tickingRadius, clampedTicking, clampedMax
             );
         }
@@ -74,7 +74,7 @@ public record ChunkloadEntry(ResourceLocation ownerId, int minRadius, int maxRad
         int clampedTicks = Math.max(1, ticksToMaxRadius);
         if (clampedTicks != ticksToMaxRadius) {
             LOGGER.warn(
-                    "spore_containment_breach: chunkload entry {} ticksToMaxRadius {} clamped to {} (must be >=1)",
+                    "sporebreach: chunkload entry {} ticksToMaxRadius {} clamped to {} (must be >=1)",
                     ownerId, ticksToMaxRadius, clampedTicks
             );
         }

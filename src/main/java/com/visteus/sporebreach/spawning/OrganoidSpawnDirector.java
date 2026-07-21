@@ -63,7 +63,7 @@ public final class OrganoidSpawnDirector {
                 eligible.add(mound);
             } else {
                 LOGGER.debug(
-                        "spore_containment_breach: Mound at {} excluded from cycle - {}",
+                        "sporebreach: Mound at {} excluded from cycle - {}",
                         mound.getOnPos(), reason
                 );
             }
@@ -75,7 +75,7 @@ public final class OrganoidSpawnDirector {
                 eligible.add(proto);
             } else {
                 LOGGER.debug(
-                        "spore_containment_breach: Proto at {} excluded from cycle - {}",
+                        "sporebreach: Proto at {} excluded from cycle - {}",
                         proto.getOnPos(), reason
                 );
             }
@@ -83,7 +83,7 @@ public final class OrganoidSpawnDirector {
         if (eligible.isEmpty()) {
             if (!mounds.isEmpty() || !protos.isEmpty()) {
                 LOGGER.debug(
-                        "spore_containment_breach: cycle in {} - 0 eligible organoid(s) out of {} tracked",
+                        "sporebreach: cycle in {} - 0 eligible organoid(s) out of {} tracked",
                         level.dimension().location(), mounds.size() + protos.size()
                 );
             }
@@ -94,7 +94,7 @@ public final class OrganoidSpawnDirector {
 
         int budget = SporeBreachServerConfig.DIRECTOR_BUDGET_PER_CYCLE.get();
         LOGGER.debug(
-                "spore_containment_breach: cycle in {} - {} eligible organoid(s) out of {} tracked, budget {}",
+                "sporebreach: cycle in {} - {} eligible organoid(s) out of {} tracked, budget {}",
                 level.dimension().location(), eligible.size(), mounds.size() + protos.size(), budget
         );
         for (int i = 0; i < eligible.size(); i++) {
@@ -102,7 +102,7 @@ public final class OrganoidSpawnDirector {
             double dist = Math.sqrt(nearestPlayerDistanceSqr(organoid, players));
             BlockPos pos = organoid.getOnPos();
             LOGGER.debug(
-                    "spore_containment_breach:   [{}] {} at {} - {} blocks from nearest player{}",
+                    "sporebreach:   [{}] {} at {} - {} blocks from nearest player{}",
                     i, organoid.getClass().getSimpleName(), pos, String.format("%.1f", dist),
                     i < budget ? " -> DISPATCHED" : " (skipped, over budget)"
             );

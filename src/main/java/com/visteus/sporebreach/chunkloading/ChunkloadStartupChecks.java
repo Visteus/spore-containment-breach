@@ -27,8 +27,8 @@ public final class ChunkloadStartupChecks {
     public static void onServerAboutToStart(ServerAboutToStartEvent event) {
         if (SConfig.SERVER.proto_chunk.get()) {
             LOGGER.warn(
-                    "spore_containment_breach: Spore's own proto_chunk chunkloader is enabled and redundant now that "
-                            + "spore_containment_breach's chunkloading system manages Proto-Hivemind/Mound chunkloading - "
+                    "sporebreach: Spore's own proto_chunk chunkloader is enabled and redundant now that "
+                            + "sporebreach's chunkloading system manages Proto-Hivemind/Mound chunkloading - "
                             + "consider disabling proto_chunk in Spore's config"
             );
         }

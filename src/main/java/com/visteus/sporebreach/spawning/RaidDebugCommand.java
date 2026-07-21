@@ -17,7 +17,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
- * {@code /spore_containment_breach:raid_debug} - lists every currently-dispatched Proto raid in
+ * {@code /sporebreach:raid_debug} - lists every currently-dispatched Proto raid in
  * the executor's dimension: originating Proto, target, age (ticks since dispatch), living/total
  * raider count, and the current position of one randomly chosen living raider. Exists because
  * raid members are ordinary mobs scattered around a target rather than a single trackable
@@ -35,7 +35,7 @@ public final class RaidDebugCommand {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
-                Commands.literal("spore_containment_breach:raid_debug")
+                Commands.literal("sporebreach:raid_debug")
                         .requires(source -> source.hasPermission(2))
                         .executes(RaidDebugCommand::run)
         );
@@ -48,12 +48,12 @@ public final class RaidDebugCommand {
         RaidRegistry.pruneFinished(level);
         List<RaidRegistry.RaidRecord> raids = RaidRegistry.snapshot(level);
         if (raids.isEmpty()) {
-            source.sendFailure(Component.literal("spore_containment_breach: no active raids in " + level.dimension().location()));
+            source.sendFailure(Component.literal("sporebreach: no active raids in " + level.dimension().location()));
             return 0;
         }
 
         source.sendSuccess(() -> Component.literal(
-                "spore_containment_breach raid debug - " + raids.size() + " active raid(s) in " + level.dimension().location()
+                "sporebreach raid debug - " + raids.size() + " active raid(s) in " + level.dimension().location()
         ), false);
         for (RaidRegistry.RaidRecord raid : raids) {
             report(source, level, raid);

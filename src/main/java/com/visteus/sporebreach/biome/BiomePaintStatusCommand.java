@@ -21,7 +21,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
- * {@code /spore_containment_breach:biome_paint_status} - reports the nearest chunkload-tracked
+ * {@code /sporebreach:biome_paint_status} - reports the nearest chunkload-tracked
  * organoid in the executor's dimension, comparing its chunkload radius against biome-paint's
  * allowed spread boundary and how many chunks its BFS frontier still has pending. Mirrors {@link
  * com.visteus.sporebreach.chunkloading.ChunkloadDebugCommand}'s shape, since biome painting
@@ -36,7 +36,7 @@ public final class BiomePaintStatusCommand {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
-                Commands.literal("spore_containment_breach:biome_paint_status")
+                Commands.literal("sporebreach:biome_paint_status")
                         .requires(source -> source.hasPermission(2))
                         .executes(BiomePaintStatusCommand::run)
         );
@@ -72,7 +72,7 @@ public final class BiomePaintStatusCommand {
 
         if (nearestId == null) {
             source.sendFailure(Component.literal(
-                    "spore_containment_breach: no loaded chunkload-owning entity tracked in " + level.dimension().location()
+                    "sporebreach: no loaded chunkload-owning entity tracked in " + level.dimension().location()
             ));
             return 0;
         }
@@ -88,7 +88,7 @@ public final class BiomePaintStatusCommand {
         ChunkloadOwnerId.EntityOwner finalNearestId = nearestId;
         BlockPos finalNearestPos = nearestPos;
         source.sendSuccess(() -> Component.literal(
-                "spore_containment_breach biome paint status - nearest owner in " + level.dimension().location()
+                "sporebreach biome paint status - nearest owner in " + level.dimension().location()
         ), false);
         source.sendSuccess(() -> Component.literal(
                 "  Owner: " + (typeId != null ? typeId : "?") + " (uuid " + finalNearestId.entityId() + ")"

@@ -54,7 +54,7 @@ public abstract class PersistedData {
             NbtIo.writeCompressed(save(new CompoundTag()), path);
             dirty = false;
         } catch (IOException e) {
-            LOGGER.error("spore_containment_breach: failed to save {}", fileName(), e);
+            LOGGER.error("sporebreach: failed to save {}", fileName(), e);
         }
     }
 
@@ -66,7 +66,7 @@ public abstract class PersistedData {
         try {
             load(NbtIo.readCompressed(path, NbtAccounter.unlimitedHeap()));
         } catch (IOException e) {
-            LOGGER.error("spore_containment_breach: failed to load {}", fileName(), e);
+            LOGGER.error("sporebreach: failed to load {}", fileName(), e);
         }
     }
 }

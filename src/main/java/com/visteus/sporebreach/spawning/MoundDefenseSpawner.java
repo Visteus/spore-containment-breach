@@ -91,7 +91,7 @@ public final class MoundDefenseSpawner {
         // should never trip, but Mounds must never spawn calamities/Wombs under any circumstance.
         if (spawned instanceof Calamity || spawned instanceof Womb) {
             LOGGER.error(
-                    "spore_containment_breach: refused to let a Mound spawn a forbidden entity type ({}) - "
+                    "sporebreach: refused to let a Mound spawn a forbidden entity type ({}) - "
                             + "this indicates a bug in spawn pool filtering, please report it",
                     entry.type()
             );

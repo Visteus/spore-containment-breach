@@ -66,6 +66,12 @@ public final class SporeBreachServerConfig {
     public static final IntValue CORRUPTION_BREAKPOINT_ADAPTATIONS;
     public static final IntValue CORRUPTION_BREAKPOINT_LINKED_SPAWNS;
 
+    public static final BooleanValue CORRUPTION_MOB_SCALING_ENABLED;
+    public static final DoubleValue CORRUPTION_MOB_HEALTH_MAX_MULTIPLIER;
+    public static final DoubleValue CORRUPTION_MOB_DAMAGE_MAX_MULTIPLIER;
+    public static final DoubleValue CORRUPTION_MOB_ARMOR_MAX_BONUS;
+    public static final DoubleValue CORRUPTION_MOB_ARMOR_TOUGHNESS_MAX_BONUS;
+
     public static final IntValue CHUNKLOAD_RECHECK_INTERVAL_TICKS;
     public static final ConfigValue<List<? extends String>> CHUNKLOAD_ENTITY_OWNERS;
     public static final ConfigValue<List<? extends String>> CHUNKLOAD_BLOCK_OWNERS;
@@ -188,6 +194,25 @@ public final class SporeBreachServerConfig {
         CORRUPTION_BREAKPOINT_LINKED_SPAWNS = builder
                 .comment(" Corruption value at which all applicable spore mobs spawn as Linked. Default 850.")
                 .defineInRange("breakpointLinkedSpawns", 850, 0, Integer.MAX_VALUE);
+        CORRUPTION_MOB_SCALING_ENABLED = builder
+                .comment(" Toggle for corruption-scaled spore mob health/damage/armor. Default true.")
+                .define("mobScalingEnabled", true);
+        CORRUPTION_MOB_HEALTH_MAX_MULTIPLIER = builder
+                .comment(" Health multiplier applied to spore mobs at maximum World Corruption, scaling",
+                        " linearly from 1.0x at zero corruption. Set to 1.0 to disable. Default 3.0.")
+                .defineInRange("mobHealthMaxMultiplier", 3.0, 1.0, 1000.0);
+        CORRUPTION_MOB_DAMAGE_MAX_MULTIPLIER = builder
+                .comment(" Attack damage multiplier applied to spore mobs at maximum World Corruption, scaling",
+                        " linearly from 1.0x at zero corruption. Set to 1.0 to disable. Default 2.0.")
+                .defineInRange("mobDamageMaxMultiplier", 2.0, 1.0, 1000.0);
+        CORRUPTION_MOB_ARMOR_MAX_BONUS = builder
+                .comment(" Flat armor points added to spore mobs at maximum World Corruption, scaling linearly",
+                        " from 0 at zero corruption. Set to 0 to disable. Default 10.0.")
+                .defineInRange("mobArmorMaxBonus", 10.0, 0.0, 100.0);
+        CORRUPTION_MOB_ARMOR_TOUGHNESS_MAX_BONUS = builder
+                .comment(" Flat armor toughness added to spore mobs at maximum World Corruption, scaling linearly",
+                        " from 0 at zero corruption. Set to 0 to disable. Default 4.0.")
+                .defineInRange("mobArmorToughnessMaxBonus", 4.0, 0.0, 100.0);
         builder.pop();
 
         builder.push("chunkloading");
@@ -375,9 +400,9 @@ public final class SporeBreachServerConfig {
                 .defineListAllowEmpty(
                         "structurePool",
                         () -> Lists.newArrayList(
-                                "spore_containment_breach:mound_watchtower|30",
-                                "spore_containment_breach:mound_fort_bulb|35",
-                                "spore_containment_breach:mound_fort_cluster|35"
+                                "sporebreach:mound_watchtower|30",
+                                "sporebreach:mound_fort_bulb|35",
+                                "sporebreach:mound_fort_cluster|35"
                         ),
                         () -> "modid:structure_id|weight",
                         o -> o instanceof String
@@ -393,10 +418,10 @@ public final class SporeBreachServerConfig {
                 .defineListAllowEmpty(
                         "undergroundPool",
                         () -> Lists.newArrayList(
-                                "spore_containment_breach:underground_pillar_small|30",
-                                "spore_containment_breach:underground_pillar_large|25",
-                                "spore_containment_breach:underground_chambers|25",
-                                "spore_containment_breach:underground_column|20"
+                                "sporebreach:underground_pillar_small|30",
+                                "sporebreach:underground_pillar_large|25",
+                                "sporebreach:underground_chambers|25",
+                                "sporebreach:underground_column|20"
                         ),
                         () -> "modid:structure_id|weight",
                         o -> o instanceof String
@@ -553,11 +578,11 @@ public final class SporeBreachServerConfig {
                 .defineListAllowEmpty(
                         "structurePool",
                         () -> Lists.newArrayList(
-                                "spore_containment_breach:proto_spire_hollow|40",
-                                "spore_containment_breach:proto_spire_hollow_alt|40",
-                                "spore_containment_breach:proto_spire_apex|20",
-                                "spore_containment_breach:proto_spire_needle|20",
-                                "spore_containment_breach:proto_spire_shelf|20"
+                                "sporebreach:proto_spire_hollow|40",
+                                "sporebreach:proto_spire_hollow_alt|40",
+                                "sporebreach:proto_spire_apex|20",
+                                "sporebreach:proto_spire_needle|20",
+                                "sporebreach:proto_spire_shelf|20"
                         ),
                         () -> "modid:structure_id|weight",
                         o -> o instanceof String
@@ -574,10 +599,10 @@ public final class SporeBreachServerConfig {
                 .defineListAllowEmpty(
                         "undergroundPool",
                         () -> Lists.newArrayList(
-                                // "spore_containment_breach:underground_pillar_small|30",
-                                "spore_containment_breach:underground_pillar_large|25",
-                                // "spore_containment_breach:underground_chambers|25",
-                                "spore_containment_breach:underground_column|20"
+                                // "sporebreach:underground_pillar_small|30",
+                                "sporebreach:underground_pillar_large|25",
+                                // "sporebreach:underground_chambers|25",
+                                "sporebreach:underground_column|20"
                         ),
                         () -> "modid:structure_id|weight",
                         o -> o instanceof String

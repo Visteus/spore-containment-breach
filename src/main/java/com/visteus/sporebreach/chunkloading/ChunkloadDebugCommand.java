@@ -18,7 +18,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
- * {@code /spore_containment_breach:chunkload_debug} - reports the nearest tracked chunkload
+ * {@code /sporebreach:chunkload_debug} - reports the nearest tracked chunkload
  * owner in the executor's dimension: its position, current/min/max/ticking radius, and growth
  * progress. Exists because {@code /forceload query} only reports vanilla's own "Forced" ticket
  * set (ServerLevel#getForcedChunks) and has no visibility into NeoForge's mod-registered
@@ -33,7 +33,7 @@ public final class ChunkloadDebugCommand {
     @SubscribeEvent
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
-                Commands.literal("spore_containment_breach:chunkload_debug")
+                Commands.literal("sporebreach:chunkload_debug")
                         .requires(source -> source.hasPermission(2))
                         .executes(ChunkloadDebugCommand::run)
         );
@@ -46,7 +46,7 @@ public final class ChunkloadDebugCommand {
 
         Map<ChunkloadOwnerId, ChunkloadState> owners = ChunkloadData.snapshot(level);
         if (owners.isEmpty()) {
-            source.sendFailure(Component.literal("spore_containment_breach: no chunkload owners tracked in " + level.dimension().location()));
+            source.sendFailure(Component.literal("sporebreach: no chunkload owners tracked in " + level.dimension().location()));
             return 0;
         }
 
@@ -108,7 +108,7 @@ public final class ChunkloadDebugCommand {
         }
 
         source.sendSuccess(() -> Component.literal(
-                "spore_containment_breach chunkload debug - nearest owner in " + level.dimension().location()
+                "sporebreach chunkload debug - nearest owner in " + level.dimension().location()
         ), false);
         source.sendSuccess(() -> Component.literal("  Owner: " + ownerLabel), false);
         source.sendSuccess(() -> Component.literal(

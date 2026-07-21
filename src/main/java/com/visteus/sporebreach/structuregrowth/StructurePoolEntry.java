@@ -16,7 +16,7 @@ public record StructurePoolEntry(ResourceLocation structureId, int weight) {
     public static Optional<StructurePoolEntry> parse(String raw) {
         String[] parts = raw.split("\\|");
         if (parts.length != 2) {
-            LOGGER.warn("spore_containment_breach: invalid structure pool entry (expected structureId|weight): {}", raw);
+            LOGGER.warn("sporebreach: invalid structure pool entry (expected structureId|weight): {}", raw);
             return Optional.empty();
         }
 
@@ -24,7 +24,7 @@ public record StructurePoolEntry(ResourceLocation structureId, int weight) {
         try {
             id = ResourceLocation.parse(parts[0]);
         } catch (Exception e) {
-            LOGGER.warn("spore_containment_breach: invalid structure id in structure pool entry: {}", raw);
+            LOGGER.warn("sporebreach: invalid structure id in structure pool entry: {}", raw);
             return Optional.empty();
         }
 
@@ -32,7 +32,7 @@ public record StructurePoolEntry(ResourceLocation structureId, int weight) {
             int weight = Integer.parseInt(parts[1]);
             return Optional.of(new StructurePoolEntry(id, weight));
         } catch (NumberFormatException e) {
-            LOGGER.warn("spore_containment_breach: invalid weight in structure pool entry: {}", raw);
+            LOGGER.warn("sporebreach: invalid weight in structure pool entry: {}", raw);
             return Optional.empty();
         }
     }

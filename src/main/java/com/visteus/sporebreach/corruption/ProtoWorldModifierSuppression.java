@@ -36,7 +36,7 @@ public final class ProtoWorldModifierSuppression {
 
         SConfig.SERVER.proto_spawn_world_mod.set(Integer.MAX_VALUE);
         LOGGER.info(
-                "spore_containment_breach: neutralized Spore's Proto World Modifier "
+                "sporebreach: neutralized Spore's Proto World Modifier "
                         + "(neutralizeProtoWorldModifier=true) - World Corruption now drives those effects instead"
         );
     }

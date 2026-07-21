@@ -18,7 +18,7 @@ public record SpawnPoolEntry(EntityType<?> type, int weight, int min, int max) {
     public static Optional<SpawnPoolEntry> parse(String raw) {
         String[] parts = raw.split("\\|");
         if (parts.length != 4) {
-            LOGGER.warn("spore_containment_breach: invalid spawn pool entry (expected entityId|weight|min|max): {}", raw);
+            LOGGER.warn("sporebreach: invalid spawn pool entry (expected entityId|weight|min|max): {}", raw);
             return Optional.empty();
         }
 
@@ -26,13 +26,13 @@ public record SpawnPoolEntry(EntityType<?> type, int weight, int min, int max) {
         try {
             id = ResourceLocation.parse(parts[0]);
         } catch (Exception e) {
-            LOGGER.warn("spore_containment_breach: invalid entity id in spawn pool entry: {}", raw);
+            LOGGER.warn("sporebreach: invalid entity id in spawn pool entry: {}", raw);
             return Optional.empty();
         }
 
         Optional<EntityType<?>> type = BuiltInRegistries.ENTITY_TYPE.getOptional(id);
         if (type.isEmpty()) {
-            LOGGER.warn("spore_containment_breach: unknown entity type in spawn pool entry: {}", raw);
+            LOGGER.warn("sporebreach: unknown entity type in spawn pool entry: {}", raw);
             return Optional.empty();
         }
 
@@ -42,7 +42,7 @@ public record SpawnPoolEntry(EntityType<?> type, int weight, int min, int max) {
             int max = Integer.parseInt(parts[3]);
             return Optional.of(new SpawnPoolEntry(type.get(), weight, min, max));
         } catch (NumberFormatException e) {
-            LOGGER.warn("spore_containment_breach: invalid number in spawn pool entry: {}", raw);
+            LOGGER.warn("sporebreach: invalid number in spawn pool entry: {}", raw);
             return Optional.empty();
         }
     }

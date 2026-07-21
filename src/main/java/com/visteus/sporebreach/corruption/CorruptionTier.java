@@ -18,6 +18,16 @@ public final class CorruptionTier {
     }
 
     /**
+     * Raw corruption value as a fraction of the cap - 0.0 at zero corruption, 1.0 at
+     * {@code CORRUPTION_CAP}. Shared basis for anything that scales linearly with corruption
+     * (raid group size, mob stat scaling, etc).
+     */
+    public static double fraction(ServerLevel level) {
+        int cap = SporeBreachServerConfig.CORRUPTION_CAP.get();
+        return cap > 0 ? Math.min(1.0, (double) value(level) / cap) : 0.0;
+    }
+
+    /**
      * Stage 1: Proto-Hivemind raids on players.
      */
     public static boolean areRaidsAllowed(ServerLevel level) {
