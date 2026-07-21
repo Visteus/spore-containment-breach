@@ -464,8 +464,8 @@ public final class SporeBreachServerConfig {
         builder.push("structures");
         PROTO_STRUCTURE_RECHECK_INTERVAL_TICKS = builder
                 .comment(" How often (in ticks) a Proto-Hivemind is checked for starting a new structure",
-                        " growth job. Default 1200 (1 min).")
-                .defineInRange("recheckIntervalTicks", 1200, 20, Integer.MAX_VALUE);
+                        " growth job. Default 6000 (5 min).")
+                .defineInRange("recheckIntervalTicks", 6000, 20, Integer.MAX_VALUE);
         PROTO_STRUCTURE_PASS_INTERVAL_TICKS = builder
                 .comment(" How often (in ticks) an in-progress structure growth job is advanced by one",
                         " building pass. Default 40 (2s).")
@@ -483,8 +483,8 @@ public final class SporeBreachServerConfig {
         PROTO_STRUCTURE_MIN_DISTANCE = builder
                 .comment(" Minimum distance (blocks) between a Proto-Hivemind's 2nd+ grown structure and its",
                         " earlier ones. The first structure is always centered on the Proto-Hivemind itself.",
-                        " Default 24.")
-                .defineInRange("minDistance", 24, 0, Integer.MAX_VALUE);
+                        " Default 64.")
+                .defineInRange("minDistance", 64, 0, Integer.MAX_VALUE);
         PROTO_STRUCTURE_BIOMASS_COST_PER_PASS = builder
                 .comment(" Biomass spent per building pass, the same resource base Spore's own Proto-Hivemind",
                         " shell growth spends. A pass is skipped if biomass is too low. Default 8.")
@@ -518,7 +518,7 @@ public final class SporeBreachServerConfig {
                 .defineListAllowEmpty(
                         "undergroundPool",
                         () -> Lists.newArrayList(
-                                "spore_containment_breach:underground_pillar_small|30",
+                                // "spore_containment_breach:underground_pillar_small|30",
                                 "spore_containment_breach:underground_pillar_large|25",
                                 // "spore_containment_breach:underground_chambers|25",
                                 "spore_containment_breach:underground_column|20"
