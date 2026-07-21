@@ -128,11 +128,6 @@ public final class ProtoStructureGrowth {
     }
 
     private static void maybeStartUnderground(ServerLevel level, Proto proto, OrganoidStructureState state) {
-        BlockPos anchor = state.pendingUndergroundAnchor();
-        if (!OrganoidStructurePlacer.isNaturalGround(level, anchor.below())) {
-            return;
-        }
-
         RandomSource random = proto.getRandom();
         if (!state.pendingUndergroundGuaranteed()
                 && random.nextDouble() >= SporeBreachServerConfig.PROTO_STRUCTURE_UNDERGROUND_CHANCE.get()) {
@@ -147,6 +142,10 @@ public final class ProtoStructureGrowth {
 
         StructureTemplate template = OrganoidStructurePlacer.resolveTemplate(level, entry.get().structureId());
         StructureGrowthJob job = buildJob(template, state.pendingUndergroundAnchor(), true);
+        double minCoverage = SporeBreachServerConfig.STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE.get();
+        if (OrganoidStructurePlacer.naturalGroundCoverage(level, job) < minCoverage) {
+            return;
+        }
         state.setUndergroundJob(job);
     }
 

@@ -63,6 +63,11 @@ public final class StructureGrowthJob {
         return frontier.isEmpty();
     }
 
+    /** Every position this job will eventually place a block at, regardless of progress so far. */
+    public Set<BlockPos> targetPositions() {
+        return byPos.keySet();
+    }
+
     /** Footprint rectangle at this job's base layer, for scoping the nearby-water sweep. */
     public Footprint baseFootprint() {
         return new Footprint(new BlockPos(minX, baseY, minZ), new BlockPos(maxX, baseY, maxZ));

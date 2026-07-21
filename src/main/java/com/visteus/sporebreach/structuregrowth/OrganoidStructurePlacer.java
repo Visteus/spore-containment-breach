@@ -5,6 +5,7 @@ import com.visteus.sporebreach.SporeContainmentBreach;
 import com.visteus.sporebreach.mixin.StructureTemplateAccessor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -71,12 +72,28 @@ public final class OrganoidStructurePlacer {
 
     /**
      * True if {@code pos} is real terrain rather than another organoid's already-grown structure.
-     * The heightmap an underground job anchors off of can't tell those apart on its own - it
-     * happily reports the top of a neighboring Mound's tower as "surface" - so this is checked
-     * before an underground job is allowed to start digging into whatever it lands on.
      */
     public static boolean isNaturalGround(ServerLevel level, BlockPos pos) {
         return level.getBlockState(pos).is(NATURAL_GROUND);
+    }
+
+    /**
+     * Fraction of {@code job}'s target positions that are currently natural terrain, checked
+     * before an underground job is allowed to start. The heightmap an underground job anchors off
+     * of can't tell real ground apart from a neighboring organoid's structure on its own - it
+     * happily reports the top of a Mound's tower as "surface" too - and a single sample point at
+     * the anchor can't tell a solid mountain apart from a thin floating overhang with open sky
+     * just beneath it. Checking coverage across the whole job instead handles both: a foreign
+     * structure or open sky under most of the footprint pulls this down, while ordinary cave
+     * pockets inside otherwise-solid terrain barely move it.
+     */
+    public static double naturalGroundCoverage(ServerLevel level, StructureGrowthJob job) {
+        Set<BlockPos> positions = job.targetPositions();
+        if (positions.isEmpty()) {
+            return 1.0;
+        }
+        long naturalCount = positions.stream().filter(pos -> isNaturalGround(level, pos)).count();
+        return (double) naturalCount / positions.size();
     }
 
     /**

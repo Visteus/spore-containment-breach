@@ -89,6 +89,7 @@ public final class SporeBreachServerConfig {
     public static final EnumValue<StructureGrowthMode> STRUCTURE_GROWTH_MODE;
     public static final BooleanValue STRUCTURE_WATER_REPLACEMENT_ENABLED;
     public static final IntValue STRUCTURE_WATER_REPLACEMENT_RADIUS;
+    public static final DoubleValue STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE;
 
     public static final IntValue MOUND_STRUCTURE_RECHECK_INTERVAL_TICKS;
     public static final IntValue MOUND_STRUCTURE_PASS_INTERVAL_TICKS;
@@ -229,9 +230,13 @@ public final class SporeBreachServerConfig {
                         " with crusted bile. Default true.")
                 .define("waterReplacementEnabled", true);
         STRUCTURE_WATER_REPLACEMENT_RADIUS = builder
-                .comment(" Radius (blocks) around a completed surface structure's base checked for water to",
-                        " replace. Default 4.")
+                .comment(" Radius (blocks) around a completed surface structure's base checked for water to replace. ",
+                        " Default 4.")
                 .defineInRange("waterReplacementRadius", 4, 0, 16);
+        STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE = builder
+                .comment(" Minimum fraction of an underground structure's blocks that must currently sit in",
+                        " natural terrain for it to be allowed to grow. Default 0.25.")
+                .defineInRange("undergroundNaturalGroundCoverage", 0.25, 0.0, 1.0);
         builder.pop();
 
         builder.push("mound");
@@ -336,8 +341,8 @@ public final class SporeBreachServerConfig {
                         " Default 0.5.")
                 .defineInRange("undergroundChance", 0.5, 0.0, 1.0);
         MOUND_STRUCTURE_UNDERGROUND_POOL = builder
-                .comment(" Underground structures a Mound may grow beneath a surface structure. Skipped if the",
-                        " ground there isn't natural terrain (e.g. another organoid's structure).",
+                .comment(" Underground structures a Mound may grow beneath a surface structure. Skipped if it",
+                        " wouldn't clear undergroundNaturalGroundCoverage (see [mobs.structures]).",
                         " Format: \"structureId|weight\".")
                 .defineListAllowEmpty(
                         "undergroundPool",
@@ -512,8 +517,8 @@ public final class SporeBreachServerConfig {
                         " Default 0.5.")
                 .defineInRange("undergroundChance", 0.5, 0.0, 1.0);
         PROTO_STRUCTURE_UNDERGROUND_POOL = builder
-                .comment(" Underground structures a Proto-Hivemind may grow beneath a surface structure.",
-                        " Skipped if the ground there isn't natural terrain (e.g. another organoid's structure).",
+                .comment(" Underground structures a Proto-Hivemind may grow beneath a surface structure. Skipped",
+                        " if it wouldn't clear undergroundNaturalGroundCoverage (see [mobs.structures]).",
                         " Format: \"structureId|weight\".")
                 .defineListAllowEmpty(
                         "undergroundPool",
