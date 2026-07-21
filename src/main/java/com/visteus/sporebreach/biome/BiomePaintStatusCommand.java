@@ -23,8 +23,8 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 /**
  * {@code /spore_containment_breach:biome_paint_status} - reports the nearest chunkload-tracked
  * organoid in the executor's dimension, comparing its chunkload radius against biome-paint's
- * target/last-force-loaded radius and the size of its dimension's pending paint queue. Mirrors
- * {@link com.visteus.sporebreach.chunkloading.ChunkloadDebugCommand}'s shape, since biome painting
+ * allowed spread boundary and how many chunks its BFS frontier still has pending. Mirrors {@link
+ * com.visteus.sporebreach.chunkloading.ChunkloadDebugCommand}'s shape, since biome painting
  * piggybacks directly on chunkload's own radius growth (see {@link BiomePaintManager}).
  */
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
@@ -79,9 +79,8 @@ public final class BiomePaintStatusCommand {
 
         int chunkloadRadius = nearestState.lastIssuedRadius();
         int extraRadius = SporeBreachServerConfig.BIOME_PAINT_EXTRA_RADIUS_CHUNKS.get();
-        int targetRadius = chunkloadRadius + extraRadius;
-        int forcedRadius = BiomePaintManager.getLastForceLoadedRadius(nearestId.entityId());
-        int queued = BiomePaintManager.pendingPaintCount(level);
+        int allowedRadius = BiomePaintManager.getAllowedRadius(nearestId.entityId());
+        int frontierPending = BiomePaintManager.pendingFrontierCount(nearestId.entityId());
 
         Entity entity = level.getEntity(nearestId.entityId());
         ResourceLocation typeId = entity != null ? BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()) : null;
@@ -99,10 +98,12 @@ public final class BiomePaintStatusCommand {
         ), false);
         source.sendSuccess(() -> Component.literal("  Chunkload radius: " + chunkloadRadius), false);
         source.sendSuccess(() -> Component.literal(
-                "  Biome target radius: " + targetRadius + " (chunkload + " + extraRadius + "), last force-loaded: " + forcedRadius
-                        + (forcedRadius >= targetRadius ? " (caught up)" : " (pending next recheck)")
+                "  Biome spread boundary: " + allowedRadius + " (chunkload + " + extraRadius + ")"
         ), false);
-        source.sendSuccess(() -> Component.literal("  Columns queued to paint in this dimension: " + queued), false);
+        source.sendSuccess(() -> Component.literal(
+                "  Frontier chunks pending for this owner: " + frontierPending
+                        + (frontierPending == 0 ? " (spread caught up to boundary)" : " (still radiating outward)")
+        ), false);
         return 1;
     }
 }

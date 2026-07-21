@@ -83,6 +83,8 @@ public final class SporeBreachServerConfig {
     public static final BooleanValue AREA_WATER_REPLACEMENT_ENABLED;
     public static final IntValue AREA_WATER_REPLACEMENT_DEPTH;
     public static final IntValue AREA_WATER_REPLACEMENT_BLOCKS_PER_PASS;
+    public static final IntValue AREA_WATER_RESEED_INTERVAL_TICKS;
+    public static final DoubleValue AREA_WATER_RESEED_CHANCE;
 
     public static final BooleanValue MOUND_GENESIS_ENABLED;
     public static final IntValue MOUND_GENESIS_SCAN_INTERVAL_TICKS;
@@ -258,6 +260,15 @@ public final class SporeBreachServerConfig {
                 .comment(" Max water blocks converted to crusted bile per recheck, shared across every column",
                         " painted that pass. Default 6.")
                 .defineInRange("areaWaterReplacementBlocksPerPass", 6, 1, Integer.MAX_VALUE);
+        AREA_WATER_RESEED_INTERVAL_TICKS = builder
+                .comment(" How often (in ticks) each organoid rolls a chance to seed a fresh water source",
+                        " somewhere within its biome radius, catching ponds not connected to its main spread.",
+                        " Default 1200 (1 min).")
+                .defineInRange("areaWaterReseedIntervalTicks", 1200, 20, Integer.MAX_VALUE);
+        AREA_WATER_RESEED_CHANCE = builder
+                .comment(" Chance, checked every areaWaterReseedIntervalTicks per organoid, of rolling a new",
+                        " reseed. Default 0.1.")
+                .defineInRange("areaWaterReseedChance", 0.1, 0.0, 1.0);
         builder.pop();
 
         builder.pop();

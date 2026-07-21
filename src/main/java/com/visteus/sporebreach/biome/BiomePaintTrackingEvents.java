@@ -17,14 +17,17 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 
 /**
  * Starts Goal #5's "lingering scar" countdown when a Mound/Proto-Hivemind dies: unclaims every
- * column its biome-paint radius reached, mirroring {@link
+ * column within its biome-paint spread boundary, mirroring {@link
  * com.visteus.sporebreach.corruption.CorruptionContributionEvents}'s creation/death-edge listener
- * shape. Reads the owner's last force-loaded radius from {@link BiomePaintManager} (which grows
+ * shape. Reads the owner's current spread boundary from {@link BiomePaintManager} (which grows
  * independently of, but in lockstep with, chunkload's own radius) and its anchor chunk from {@link
- * ChunkloadData}, since both organoid types share that one anchor. Deliberately doesn't release
- * the underlying force-load tickets or repaint anything here - the column must stay loaded and
- * painted as {@code infection_zone} through its scar countdown; actually downgrading to
- * {@code dead_scar} (and any eventual ticket cleanup) is Phase D's job.
+ * ChunkloadData}, since both organoid types share that one anchor. Iterating the whole boundary
+ * circle rather than just the chunks the BFS spread has actually reached so far is a harmless
+ * superset - {@link BiomePaintData#unclaim} no-ops on a chunk this owner never actually claimed.
+ * Deliberately doesn't release the underlying force-load tickets or repaint anything here - the
+ * column must stay loaded and painted as {@code infection_zone} through its scar countdown;
+ * actually downgrading to {@code dead_scar} (and releasing the ticket) happens in {@link
+ * BiomePaintManager#processDowngrades}.
  */
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
 public final class BiomePaintTrackingEvents {
@@ -48,7 +51,7 @@ public final class BiomePaintTrackingEvents {
             return;
         }
 
-        int radius = BiomePaintManager.getLastForceLoadedRadius(entity.getUUID());
+        int radius = BiomePaintManager.getAllowedRadius(entity.getUUID());
         if (radius <= 0) {
             return;
         }

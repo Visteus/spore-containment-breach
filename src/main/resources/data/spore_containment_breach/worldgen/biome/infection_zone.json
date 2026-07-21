@@ -17,12 +17,12 @@
       "replace_current_music": false,
       "sound": "minecraft:music.nether.nether_wastes"
     },
-    "sky_color": 7036044,
-    "fog_color": 4865884,
-    "water_color": 4938302,
-    "water_fog_color": 3027748,
-    "grass_color": 9413438,
-    "foliage_color": 7244859
+    "sky_color": 6360076,
+    "fog_color": 6378837,
+    "water_color": 6189060,
+    "water_fog_color": 3094530,
+    "grass_color": 7881539,
+    "foliage_color": 7864320
   },
   "spawners": {
     "monster": []

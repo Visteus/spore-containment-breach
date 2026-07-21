@@ -8,15 +8,18 @@ import com.visteus.sporebreach.chunkloading.ChunkloadManager;
 import com.visteus.sporebreach.chunkloading.ChunkloadOwnerId;
 import com.visteus.sporebreach.chunkloading.ChunkloadState;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -27,14 +30,22 @@ import org.slf4j.Logger;
 /**
  * Orchestration core for Goal #5's biome painting, mirroring {@link ChunkloadManager}'s
  * radius-growth shape but piggybacking directly on each organoid's already-tracked chunkload
- * radius instead of tracking a second age/growth curve: biome target radius is always
- * {@code chunkloadState.lastIssuedRadius() + biomePaintExtraRadiusChunks}. Force-loading (via
- * {@link ChunkloadManager#forceBiomePaintChunk}) and claiming ({@link BiomePaintData#claim})
- * happen immediately when a chunk enters that target radius; the actual repaint is deferred onto
- * a small per-dimension queue drained at a budgeted rate by {@link #advance}, both to spread the
- * cost and to dodge an empirically-observed quirk where a chunk force-loaded for the first time in
- * a session can briefly report itself fully loaded while an async finalization pass is still in
- * flight, silently swallowing a repaint attempted in that same window - see {@link #SETTLE_TICKS}.
+ * radius instead of tracking a second age/growth curve: the boundary a spread is allowed to reach
+ * is always {@code chunkloadState.lastIssuedRadius() + biomePaintExtraRadiusChunks}. Unlike a plain
+ * radius-ring dump, each owner grows from a single seed at its anchor chunk via its own BFS
+ * frontier - copying {@link AreaWaterReplacementJob}'s "only the 8 neighbors of an
+ * already-converted cell become candidates" shape - so the visible spread genuinely radiates
+ * outward from the organoid one ring of adjacency at a time rather than the whole newly-unlocked
+ * ring appearing at once in scan order.
+ *
+ * <p>Each owner's frontier is a min-priority-queue ordered by squared distance from its anchor,
+ * not a plain FIFO - 8-directional BFS discovery grows in Chebyshev (square) rings, but {@link
+ * ChunkCircleOffsets}'s boundary is a true circle, so draining strictly by discovery order would
+ * process a corner chunk before a same-or-lesser-Chebyshev-layer edge chunk that's actually closer
+ * to the anchor, visibly squaring off the spread instead of rounding it. Ordering by true distance
+ * makes the boundary check on the queue's head still valid as a hard stop for the whole pass -
+ * since membership in {@link ChunkCircleOffsets#fullOffsets} is itself a distance threshold, if the
+ * closest pending chunk is outside it, everything farther behind it is too.
  */
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
 public final class BiomePaintManager {
@@ -46,19 +57,34 @@ public final class BiomePaintManager {
     /** Backoff before retrying a column whose chunk wasn't actually loaded yet when attempted. */
     private static final long RETRY_DELAY_TICKS = 20L;
 
-    private static final Map<UUID, Integer> lastForceLoadedRadius = new HashMap<>();
-    private static final Map<ResourceKey<Level>, Deque<PaintTask>> paintQueueByDimension = new HashMap<>();
+    private static final int[][] NEIGHBOR_OFFSETS = {
+            {-1, -1}, {-1, 0}, {-1, 1},
+            {0, -1}, {0, 1},
+            {1, -1}, {1, 0}, {1, 1}
+    };
+
+    private static final Map<UUID, Integer> allowedRadiusByOwner = new HashMap<>();
+    private static final Map<UUID, Queue<PaintTask>> frontierByOwner = new HashMap<>();
+    private static final Map<UUID, Set<ChunkPos>> discoveredByOwner = new HashMap<>();
     private static final Map<ResourceKey<Level>, AreaWaterReplacementJob> waterJobByDimension = new HashMap<>();
 
-    private record PaintTask(UUID ownerId, ChunkPos pos, long readyAtGameTime) {
+    /**
+     * A chunk this owner's spread has reached. {@code needsPaint} is resolved once, at discovery
+     * (via {@link BiomePaintData#claim}), rather than re-checked at processing time, since {@code
+     * claim} isn't safe to call twice for the same (owner, chunk) pair - a second call would see
+     * the column already {@code ACTIVE} and wrongly report "no paint needed" even if the first
+     * call's actual paint attempt hasn't happened yet.
+     */
+    private record PaintTask(ChunkPos pos, boolean needsPaint, long readyAtGameTime) {
     }
 
     private BiomePaintManager() {
     }
 
     /**
-     * Called every biomePaintRecheckIntervalTicks by BiomePaintGrowthDirector. For each tracked
-     * chunkload entity owner, grows its biome radius toward the current target if behind.
+     * Called every biomePaintRecheckIntervalTicks by BiomePaintGrowthDirector. Updates each tracked
+     * chunkload entity owner's currently-allowed spread radius, and seeds a brand new owner's
+     * frontier at its anchor chunk the first time it's seen.
      */
     public static void recheckAll(ServerLevel level) {
         int extraRadius = SporeBreachServerConfig.BIOME_PAINT_EXTRA_RADIUS_CHUNKS.get();
@@ -66,81 +92,133 @@ public final class BiomePaintManager {
             if (!(owner.getKey() instanceof ChunkloadOwnerId.EntityOwner entityOwner)) {
                 continue;
             }
-            growOwner(level, entityOwner.entityId(), owner.getValue(), extraRadius);
-        }
-    }
+            UUID ownerId = entityOwner.entityId();
+            ChunkloadState chunkloadState = owner.getValue();
+            allowedRadiusByOwner.put(ownerId, chunkloadState.lastIssuedRadius() + extraRadius);
 
-    private static void growOwner(ServerLevel level, UUID ownerId, ChunkloadState chunkloadState, int extraRadius) {
-        int targetRadius = chunkloadState.lastIssuedRadius() + extraRadius;
-        int previousRadius = lastForceLoadedRadius.getOrDefault(ownerId, 0);
-        if (targetRadius <= previousRadius) {
-            return;
-        }
+            if (!discoveredByOwner.containsKey(ownerId)) {
+                ChunkPos anchor = chunkloadState.anchorChunk();
+                Set<ChunkPos> discovered = new HashSet<>();
+                Queue<PaintTask> frontier = new PriorityQueue<>(Comparator.comparingLong(task -> distanceSq(task.pos(), anchor)));
+                discoveredByOwner.put(ownerId, discovered);
+                frontierByOwner.put(ownerId, frontier);
+                discover(level, ownerId, anchor, frontier, discovered, level.getGameTime());
 
-        Set<ChunkCircleOffsets.ChunkOffset> toAdd = new LinkedHashSet<>(ChunkCircleOffsets.fullOffsets(targetRadius));
-        toAdd.removeAll(ChunkCircleOffsets.fullOffsets(previousRadius));
-
-        long readyAt = level.getGameTime() + SETTLE_TICKS;
-        ChunkPos anchor = chunkloadState.anchorChunk();
-        Deque<PaintTask> queue = paintQueueByDimension.computeIfAbsent(level.dimension(), key -> new ArrayDeque<>());
-        for (ChunkCircleOffsets.ChunkOffset offset : toAdd) {
-            ChunkPos pos = new ChunkPos(anchor.x + offset.dx(), anchor.z + offset.dz());
-            BiomePaintData.ClaimResult result = BiomePaintData.claim(level, pos, ownerId);
-            if (result.needsTicket()) {
-                ChunkloadManager.forceBiomePaintChunk(level, ownerId, pos.x, pos.z, true);
-            }
-            if (result.needsPaint()) {
-                queue.addLast(new PaintTask(ownerId, pos, readyAt));
+                if (SporeBreachServerConfig.AREA_WATER_REPLACEMENT_ENABLED.get()) {
+                    waterJobByDimension.computeIfAbsent(level.dimension(), key -> new AreaWaterReplacementJob())
+                            .seedWithinChunk(level, anchor);
+                }
             }
         }
-        lastForceLoadedRadius.put(ownerId, targetRadius);
     }
 
     /**
-     * Called every biomePaintRecheckIntervalTicks by BiomePaintGrowthDirector, after
-     * {@link #recheckAll}. Drains up to biomePaintColumnsPerPass ready columns from this
-     * dimension's paint queue, repainting each to {@link BiomeRepaint#INFECTION_ZONE} and logging
-     * one line per success - the log is deliberately here (not buried in BiomeRepaint) since it's
-     * meant as an RCON-testable signal that spread is actually happening.
+     * Claims and (if needed) force-loads {@code pos} for {@code ownerId} exactly once, then queues
+     * it for an eventual paint attempt - immediately, if the column is already active (another
+     * owner reached it first, or a reactivation), or after {@link #SETTLE_TICKS} if this owner
+     * needs to actually call {@link BiomeRepaint}.
      */
-    public static void advance(ServerLevel level) {
-        Deque<PaintTask> queue = paintQueueByDimension.get(level.dimension());
-        if (queue == null || queue.isEmpty()) {
+    private static void discover(
+            ServerLevel level, UUID ownerId, ChunkPos pos, Queue<PaintTask> frontier, Set<ChunkPos> discovered, long now
+    ) {
+        if (!discovered.add(pos)) {
             return;
         }
+        BiomePaintData.ClaimResult result = BiomePaintData.claim(level, pos, ownerId);
+        if (result.needsTicket()) {
+            ChunkloadManager.forceBiomePaintChunk(level, ownerId, pos.x, pos.z, true);
+        }
+        long readyAt = result.needsPaint() ? now + SETTLE_TICKS : now;
+        frontier.offer(new PaintTask(pos, result.needsPaint(), readyAt));
+    }
 
+    private static long distanceSq(ChunkPos pos, ChunkPos anchor) {
+        long dx = pos.x - anchor.x;
+        long dz = pos.z - anchor.z;
+        return dx * dx + dz * dz;
+    }
+
+    /**
+     * Called every biomePaintRecheckIntervalTicks by BiomePaintGrowthDirector, after {@link
+     * #recheckAll}. Round-robins each owner's frontier against a shared per-dimension paint
+     * budget, only popping a candidate once it's both within the owner's currently-allowed radius
+     * and past its settle delay - anything blocked on either is left exactly where it is (nothing
+     * farther out in the same frontier could be any less blocked), so a pass simply stops early for
+     * that owner rather than skipping ahead out of spread order.
+     */
+    public static void advance(ServerLevel level) {
         int budget = SporeBreachServerConfig.BIOME_PAINT_COLUMNS_PER_PASS.get();
         long now = level.getGameTime();
-        int painted = 0;
-        while (painted < budget) {
-            PaintTask task = queue.peekFirst();
-            if (task == null || task.readyAtGameTime() > now) {
+
+        for (Map.Entry<ChunkloadOwnerId, ChunkloadState> owner : ChunkloadData.snapshot(level).entrySet()) {
+            if (budget <= 0) {
                 return;
             }
-            queue.pollFirst();
+            if (!(owner.getKey() instanceof ChunkloadOwnerId.EntityOwner entityOwner)) {
+                continue;
+            }
+            UUID ownerId = entityOwner.entityId();
+            Queue<PaintTask> frontier = frontierByOwner.get(ownerId);
+            if (frontier == null || frontier.isEmpty()) {
+                continue;
+            }
+            budget -= drainFrontier(
+                    level, ownerId, frontier, discoveredByOwner.get(ownerId),
+                    owner.getValue().anchorChunk(), allowedRadiusByOwner.getOrDefault(ownerId, 0), now, budget
+            );
+        }
+    }
 
-            if (BiomeRepaint.paintColumn(level, task.pos(), BiomeRepaint.INFECTION_ZONE)) {
-                painted++;
-                LOGGER.info(
-                        "spore_containment_breach: painted chunk {} to {} for owner {}",
-                        task.pos(), BiomeRepaint.INFECTION_ZONE.location(), task.ownerId()
-                );
-                if (SporeBreachServerConfig.AREA_WATER_REPLACEMENT_ENABLED.get()) {
-                    waterJobByDimension.computeIfAbsent(level.dimension(), key -> new AreaWaterReplacementJob())
-                            .seedColumn(level, task.pos());
+    /** Returns how much of {@code budget} was actually spent on real paint calls. */
+    private static int drainFrontier(
+            ServerLevel level, UUID ownerId, Queue<PaintTask> frontier, Set<ChunkPos> discovered,
+            ChunkPos anchor, int allowedRadius, long now, int budget
+    ) {
+        Set<ChunkCircleOffsets.ChunkOffset> allowedOffsets = ChunkCircleOffsets.fullOffsets(allowedRadius);
+        int consumed = 0;
+        int steps = 0;
+        int maxSteps = Math.max(budget * 5, 20);
+        while (consumed < budget && steps < maxSteps && !frontier.isEmpty()) {
+            PaintTask task = frontier.peek();
+            ChunkCircleOffsets.ChunkOffset offset = new ChunkCircleOffsets.ChunkOffset(task.pos().x - anchor.x, task.pos().z - anchor.z);
+            if (!allowedOffsets.contains(offset) || task.readyAtGameTime() > now) {
+                break;
+            }
+            frontier.poll();
+            steps++;
+
+            boolean confirmedPainted;
+            if (task.needsPaint()) {
+                if (BiomeRepaint.paintColumn(level, task.pos(), BiomeRepaint.INFECTION_ZONE)) {
+                    confirmedPainted = true;
+                    consumed++;
+                    LOGGER.info(
+                            "spore_containment_breach: painted chunk {} to {} for owner {}",
+                            task.pos(), BiomeRepaint.INFECTION_ZONE.location(), ownerId
+                    );
+                } else {
+                    frontier.offer(new PaintTask(task.pos(), true, now + RETRY_DELAY_TICKS));
+                    confirmedPainted = false;
                 }
             } else {
-                queue.addLast(new PaintTask(task.ownerId(), task.pos(), now + RETRY_DELAY_TICKS));
+                confirmedPainted = true;
+            }
+
+            if (confirmedPainted) {
+                for (int[] neighborOffset : NEIGHBOR_OFFSETS) {
+                    ChunkPos neighbor = new ChunkPos(task.pos().x + neighborOffset[0], task.pos().z + neighborOffset[1]);
+                    discover(level, ownerId, neighbor, frontier, discovered, now);
+                }
             }
         }
+        return consumed;
     }
 
     /**
      * Called every biomePaintRecheckIntervalTicks by BiomePaintGrowthDirector, alongside {@link
-     * #advance}. Drains this dimension's shared water-crusting frontier (seeded by {@link
-     * #advance} whenever a column is freshly painted) at areaWaterReplacementBlocksPerPass,
-     * regardless of how many columns were painted that same pass - see {@link
-     * AreaWaterReplacementJob}'s own javadoc for why the frontier is shared rather than per-column.
+     * #advance}. Drains this dimension's shared water-crusting frontier - seeded once per owner in
+     * {@link #recheckAll} from the water tile nearest its anchor, then grown by {@link
+     * AreaWaterReplacementJob} itself via water connectivity - at areaWaterReplacementBlocksPerPass.
      */
     public static void advanceWater(ServerLevel level) {
         if (!SporeBreachServerConfig.AREA_WATER_REPLACEMENT_ENABLED.get()) {
@@ -153,6 +231,57 @@ public final class BiomePaintManager {
         int budget = SporeBreachServerConfig.AREA_WATER_REPLACEMENT_BLOCKS_PER_PASS.get();
         int depth = SporeBreachServerConfig.AREA_WATER_REPLACEMENT_DEPTH.get();
         job.advance(level, level.getRandom(), budget, depth);
+    }
+
+    /**
+     * Called every areaWaterReseedIntervalTicks by BiomePaintGrowthDirector - a separate, much
+     * slower cadence than paint/water advancement, mirroring the recheck+chance shape {@code
+     * MoundStructureGrowth}/{@code ProtoStructureGrowth} use for their own secondary structures.
+     * Per tracked organoid, rolls areaWaterReseedChance; on success, seeds a random chunk within its
+     * current biome radius via {@link AreaWaterReplacementJob#seedWithinChunk}. This is what
+     * eventually reaches a pond that's within an organoid's territory but not water-connected to
+     * anything nearer its anchor - {@link #recheckAll}'s one-time near-anchor seed alone would never
+     * find it, since {@link AreaWaterReplacementJob} only spreads along connected water.
+     */
+    public static void tryReseedWater(ServerLevel level) {
+        if (!SporeBreachServerConfig.AREA_WATER_REPLACEMENT_ENABLED.get()) {
+            return;
+        }
+        double chance = SporeBreachServerConfig.AREA_WATER_RESEED_CHANCE.get();
+        if (chance <= 0) {
+            return;
+        }
+
+        RandomSource random = level.getRandom();
+        for (Map.Entry<ChunkloadOwnerId, ChunkloadState> owner : ChunkloadData.snapshot(level).entrySet()) {
+            if (!(owner.getKey() instanceof ChunkloadOwnerId.EntityOwner entityOwner)) {
+                continue;
+            }
+            if (random.nextDouble() >= chance) {
+                continue;
+            }
+
+            UUID ownerId = entityOwner.entityId();
+            int allowedRadius = allowedRadiusByOwner.getOrDefault(ownerId, 0);
+            if (allowedRadius <= 0) {
+                continue;
+            }
+
+            ChunkPos target = randomChunkWithin(owner.getValue().anchorChunk(), allowedRadius, random);
+            waterJobByDimension.computeIfAbsent(level.dimension(), key -> new AreaWaterReplacementJob())
+                    .seedWithinChunk(level, target);
+        }
+    }
+
+    private static ChunkPos randomChunkWithin(ChunkPos anchor, int radius, RandomSource random) {
+        Set<ChunkCircleOffsets.ChunkOffset> offsets = ChunkCircleOffsets.fullOffsets(radius);
+        int skip = random.nextInt(offsets.size());
+        Iterator<ChunkCircleOffsets.ChunkOffset> iterator = offsets.iterator();
+        ChunkCircleOffsets.ChunkOffset offset = iterator.next();
+        for (int i = 0; i < skip; i++) {
+            offset = iterator.next();
+        }
+        return new ChunkPos(anchor.x + offset.dx(), anchor.z + offset.dz());
     }
 
     /**
@@ -177,21 +306,22 @@ public final class BiomePaintManager {
         }
     }
 
-    /** Last biome radius (chunks) fully force-loaded/claimed for this owner - 0 if never grown. */
-    public static int getLastForceLoadedRadius(UUID ownerId) {
-        return lastForceLoadedRadius.getOrDefault(ownerId, 0);
+    /** Current spread boundary (chunks) for this owner - 0 if never grown. */
+    public static int getAllowedRadius(UUID ownerId) {
+        return allowedRadiusByOwner.getOrDefault(ownerId, 0);
     }
 
-    /** Columns still waiting for their repaint pass in this dimension - for status inspection. */
-    public static int pendingPaintCount(ServerLevel level) {
-        Deque<PaintTask> queue = paintQueueByDimension.get(level.dimension());
-        return queue == null ? 0 : queue.size();
+    /** Chunks this owner's spread has discovered but not yet finished processing. */
+    public static int pendingFrontierCount(UUID ownerId) {
+        Queue<PaintTask> frontier = frontierByOwner.get(ownerId);
+        return frontier == null ? 0 : frontier.size();
     }
 
     @SubscribeEvent
     public static void onServerStopped(ServerStoppedEvent event) {
-        lastForceLoadedRadius.clear();
-        paintQueueByDimension.clear();
+        allowedRadiusByOwner.clear();
+        frontierByOwner.clear();
+        discoveredByOwner.clear();
         waterJobByDimension.clear();
     }
 }

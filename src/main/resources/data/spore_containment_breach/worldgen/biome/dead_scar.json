@@ -4,12 +4,12 @@
   "has_precipitation": false,
   "temperature_modifier": "none",
   "effects": {
-    "sky_color": 4867128,
+    "sky_color": 6906973,
     "fog_color": 3748905,
-    "water_color": 3683628,
+    "water_color": 4343094,
     "water_fog_color": 2301721,
-    "grass_color": 7038290,
-    "foliage_color": 5788224
+    "grass_color": 10525058,
+    "foliage_color": 9735797
   },
   "spawners": {
     "monster": []
