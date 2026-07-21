@@ -1,6 +1,7 @@
 package com.visteus.sporebreach.config;
 
 import com.google.common.collect.Lists;
+import com.visteus.sporebreach.chunkloading.ChunkCircleOffsets;
 import java.util.List;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.common.ModConfigSpec.BooleanValue;
@@ -73,6 +74,15 @@ public final class SporeBreachServerConfig {
     public static final IntValue CALAMITY_CAP;
 
     public static final IntValue STRUCTURE_ANCHOR_SEARCH_RADIUS;
+
+    public static final BooleanValue BIOME_PAINT_ENABLED;
+    public static final IntValue BIOME_PAINT_EXTRA_RADIUS_CHUNKS;
+    public static final IntValue BIOME_PAINT_COLUMNS_PER_PASS;
+    public static final IntValue BIOME_PAINT_RECHECK_INTERVAL_TICKS;
+    public static final IntValue BIOME_PAINT_SCAR_DELAY_TICKS;
+    public static final BooleanValue AREA_WATER_REPLACEMENT_ENABLED;
+    public static final IntValue AREA_WATER_REPLACEMENT_DEPTH;
+    public static final IntValue AREA_WATER_REPLACEMENT_BLOCKS_PER_PASS;
 
     public static final BooleanValue MOUND_GENESIS_ENABLED;
     public static final IntValue MOUND_GENESIS_SCAN_INTERVAL_TICKS;
@@ -214,6 +224,40 @@ public final class SporeBreachServerConfig {
                 .comment(" Radius (blocks) searched for a nearby structure to anchor to before falling back to",
                         " the organoid's own position. Default 8.")
                 .defineInRange("structureAnchorSearchRadius", 8, 0, Integer.MAX_VALUE);
+        builder.pop();
+
+        builder.push("biome");
+        BIOME_PAINT_ENABLED = builder
+                .comment(" Whether Mounds/Proto-Hiveminds repaint the area around themselves into this mod's",
+                        " corruption biome as they chunkload-grow. Default true.")
+                .define("biomePaintEnabled", true);
+        BIOME_PAINT_EXTRA_RADIUS_CHUNKS = builder
+                .comment(" How many chunks past an organoid's own chunkload radius the biome ring extends.",
+                        " Default 2.")
+                .defineInRange("biomePaintExtraRadiusChunks", 2, 0, ChunkCircleOffsets.MAX_RADIUS);
+        BIOME_PAINT_COLUMNS_PER_PASS = builder
+                .comment(" Max chunk columns (re)painted per recheck. Default 4.")
+                .defineInRange("biomePaintColumnsPerPass", 4, 1, Integer.MAX_VALUE);
+        BIOME_PAINT_RECHECK_INTERVAL_TICKS = builder
+                .comment(" How often (in ticks) biome-paint growth and its paint queue are advanced. Default",
+                        " 200 (10s).")
+                .defineInRange("biomePaintRecheckIntervalTicks", 200, 20, Integer.MAX_VALUE);
+        BIOME_PAINT_SCAR_DELAY_TICKS = builder
+                .comment(" Ticks an unclaimed column lingers as active corruption biome before downgrading to",
+                        " the deader scar biome. Default 12000 (10 min).")
+                .defineInRange("biomePaintScarDelayTicks", 12000, 0, Integer.MAX_VALUE);
+        AREA_WATER_REPLACEMENT_ENABLED = builder
+                .comment(" Whether surface water under newly painted corruption biome gradually crusts over",
+                        " with bile. Default true.")
+                .define("areaWaterReplacementEnabled", true);
+        AREA_WATER_REPLACEMENT_DEPTH = builder
+                .comment(" Max depth (blocks) below the surface that water is converted to crusted bile.",
+                        " Default 4.")
+                .defineInRange("areaWaterReplacementDepth", 4, 1, 32);
+        AREA_WATER_REPLACEMENT_BLOCKS_PER_PASS = builder
+                .comment(" Max water blocks converted to crusted bile per recheck, shared across every column",
+                        " painted that pass. Default 6.")
+                .defineInRange("areaWaterReplacementBlocksPerPass", 6, 1, Integer.MAX_VALUE);
         builder.pop();
 
         builder.pop();

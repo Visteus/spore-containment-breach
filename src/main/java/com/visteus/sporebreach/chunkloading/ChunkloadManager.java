@@ -188,6 +188,17 @@ public final class ChunkloadManager {
         forceChunkForOwner(level, new ChunkloadOwnerId.EntityOwner(travelerId), chunk.x, chunk.z, false, true);
     }
 
+    /**
+     * Passthrough for Goal #5's biome-paint outer ring (see {@code biome.BiomePaintManager}):
+     * force-loads a chunk non-ticking under the same organoid UUID already used for its own
+     * ticking chunkload tickets. Sharing the owner UUID is safe - {@link TicketController} keys
+     * forced chunks by (owner, chunk, ticking) triple, so a ticking ticket from normal chunkload
+     * growth and a non-ticking one from biome painting on different chunks never collide.
+     */
+    public static boolean forceBiomePaintChunk(ServerLevel level, UUID ownerId, int chunkX, int chunkZ, boolean add) {
+        return forceChunkForOwner(level, new ChunkloadOwnerId.EntityOwner(ownerId), chunkX, chunkZ, add, false);
+    }
+
     private static boolean forceChunkForOwner(ServerLevel level, ChunkloadOwnerId ownerId, int chunkX, int chunkZ, boolean add, boolean ticking) {
         TicketController activeController = controller;
         if (activeController == null) {

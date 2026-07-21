@@ -1,0 +1,51 @@
+{
+  "temperature": 2.0,
+  "downfall": 0.4,
+  "has_precipitation": false,
+  "temperature_modifier": "none",
+  "effects": {
+    "ambient_sound": "minecraft:ambient.nether_wastes.loop",
+    "mood_sound": {
+      "block_search_extent": 8,
+      "offset": 2.0,
+      "sound": "minecraft:ambient.nether_wastes.mood",
+      "tick_delay": 6000
+    },
+    "music": {
+      "max_delay": 24000,
+      "min_delay": 12000,
+      "replace_current_music": false,
+      "sound": "minecraft:music.nether.nether_wastes"
+    },
+    "sky_color": 7036044,
+    "fog_color": 4865884,
+    "water_color": 4938302,
+    "water_fog_color": 3027748,
+    "grass_color": 9413438,
+    "foliage_color": 7244859
+  },
+  "spawners": {
+    "monster": []
+  },
+  "spawn_costs": {},
+  "carvers": {
+    "air": [
+      "minecraft:cave",
+      "minecraft:cave_extra_underground",
+      "minecraft:canyon"
+    ]
+  },
+  "features": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+  ]
+}
