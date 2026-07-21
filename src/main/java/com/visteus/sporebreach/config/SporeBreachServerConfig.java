@@ -89,6 +89,7 @@ public final class SporeBreachServerConfig {
     public static final EnumValue<StructureGrowthMode> STRUCTURE_GROWTH_MODE;
     public static final BooleanValue STRUCTURE_WATER_REPLACEMENT_ENABLED;
     public static final IntValue STRUCTURE_WATER_REPLACEMENT_RADIUS;
+    public static final IntValue STRUCTURE_WATER_REPLACEMENT_BLOCKS_PER_PASS;
     public static final DoubleValue STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE;
 
     public static final IntValue MOUND_STRUCTURE_RECHECK_INTERVAL_TICKS;
@@ -226,13 +227,16 @@ public final class SporeBreachServerConfig {
                         " Only one system runs at a time. Default SPORE_BREACH_TOWERS.")
                 .defineEnum("structureGrowthMode", StructureGrowthMode.SPORE_BREACH_TOWERS);
         STRUCTURE_WATER_REPLACEMENT_ENABLED = builder
-                .comment(" Whether water sources near a freshly-grown surface structure's base are replaced",
-                        " with crusted bile. Default true.")
+                .comment(" Whether water near a surface structure's base is gradually replaced with crusted",
+                        " bile, spreading outward alongside the structure's own growth. Default true.")
                 .define("waterReplacementEnabled", true);
         STRUCTURE_WATER_REPLACEMENT_RADIUS = builder
-                .comment(" Radius (blocks) around a completed surface structure's base checked for water to replace. ",
+                .comment(" Max radius (blocks) past a surface structure's base the bile spread can reach.",
                         " Default 4.")
                 .defineInRange("waterReplacementRadius", 4, 0, 16);
+        STRUCTURE_WATER_REPLACEMENT_BLOCKS_PER_PASS = builder
+                .comment(" Max water blocks converted to crusted bile per building pass. Default 3.")
+                .defineInRange("waterReplacementBlocksPerPass", 3, 1, Integer.MAX_VALUE);
         STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE = builder
                 .comment(" Minimum fraction of an underground structure's blocks that must currently sit in",
                         " natural terrain for it to be allowed to grow. Default 0.25.")

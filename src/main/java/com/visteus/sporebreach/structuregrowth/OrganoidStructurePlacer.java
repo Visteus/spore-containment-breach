@@ -1,6 +1,5 @@
 package com.visteus.sporebreach.structuregrowth;
 
-import com.Harbinger.Spore.core.Sblocks;
 import com.visteus.sporebreach.SporeContainmentBreach;
 import com.visteus.sporebreach.mixin.StructureTemplateAccessor;
 import java.util.ArrayList;
@@ -16,15 +15,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
 
 /**
  * Shared structure-template plumbing for the goal #3 organoid structure growth system: resolving
  * templates, reading their full block list (bypassing vanilla's single-block-type {@link
- * StructureTemplate#filterBlocks}), sampling real terrain height for anchoring, gating underground
- * growth to genuine terrain, and swapping nearby water for crusted bile once a surface structure
- * completes.
+ * StructureTemplate#filterBlocks}), sampling real terrain height for anchoring, and gating
+ * underground growth to genuine terrain. See {@link WaterReplacementJob} for the nearby-water
+ * spread this used to do in one bulk sweep.
  */
 public final class OrganoidStructurePlacer {
 
@@ -94,22 +91,5 @@ public final class OrganoidStructurePlacer {
         }
         long naturalCount = positions.stream().filter(pos -> isNaturalGround(level, pos)).count();
         return (double) naturalCount / positions.size();
-    }
-
-    /**
-     * Swaps water source blocks for {@code spore:crusted_bile} in the area around a completed
-     * surface structure's base - goal #3.6, keeping ponds/rivers from sitting untouched right next
-     * to a freshly-grown tower.
-     */
-    public static void replaceNearbyWaterWithBile(ServerLevel level, StructureGrowthJob.Footprint footprint, int radius) {
-        BlockPos min = footprint.min().offset(-radius, -1, -radius);
-        BlockPos max = footprint.max().offset(radius, 2, radius);
-        BlockState bile = Sblocks.CRUSTED_BILE.get().defaultBlockState();
-        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
-            FluidState fluid = level.getFluidState(pos);
-            if (fluid.isSource() && fluid.is(Fluids.WATER)) {
-                level.setBlock(pos, bile, 3);
-            }
-        }
     }
 }
