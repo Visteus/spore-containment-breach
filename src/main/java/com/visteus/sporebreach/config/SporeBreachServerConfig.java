@@ -315,8 +315,8 @@ public final class SporeBreachServerConfig {
                 .comment(" Cooldown between defender spawns for a single Mound. Default 600 (30s).")
                 .defineInRange("moundDefenderCooldownTicks", 600, 20, Integer.MAX_VALUE);
         MOUND_DEFENDER_SEARCH_RADIUS = builder
-                .comment(" Radius (blocks) around a Mound used to count and place defenders. Default 32.")
-                .defineInRange("moundDefenderSearchRadius", 32, 0, Integer.MAX_VALUE);
+                .comment(" Radius (blocks) around a Mound used to count and place defenders. Default 16.")
+                .defineInRange("moundDefenderSearchRadius", 16, 0, Integer.MAX_VALUE);
         MOUND_MAX_DEFENDERS_NEARBY = builder
                 .comment(" Max defenders a Mound allows within its search radius before it stops spawning more.",
                         " Default 12.")
@@ -617,8 +617,8 @@ public final class SporeBreachServerConfig {
                 .define("calamityCapEnabled", true);
         CALAMITY_CAP = builder
                 .comment(" Max Calamities allowed to exist at once, across every dimension. New Calamities beyond",
-                        " this cull whichever existing one is furthest from any player. Default 6.")
-                .defineInRange("calamityCap", 6, 0, Integer.MAX_VALUE);
+                        " this cull whichever existing one is furthest from any player. Default 8.")
+                .defineInRange("calamityCap", 8, 0, Integer.MAX_VALUE);
         builder.pop();
 
         builder.pop();
