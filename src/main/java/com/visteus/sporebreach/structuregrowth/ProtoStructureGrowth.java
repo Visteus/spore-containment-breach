@@ -70,11 +70,6 @@ public final class ProtoStructureGrowth {
         state.setPendingUndergroundAnchor(anchor);
         state.setPendingUndergroundGuaranteed(isFirst);
         state.recordAnchor(anchor);
-
-        if (SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_ENABLED.get()) {
-            int radius = SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_RADIUS.get();
-            state.waterJobs().add(new WaterReplacementJob(level, job.baseFootprint(), radius));
-        }
     }
 
     /** Called on the pass cadence: advance whichever job is currently running for this Proto-Hivemind. */
@@ -104,19 +99,6 @@ public final class ProtoStructureGrowth {
                 }
             }
         }
-
-        advanceWaterJobs(level, proto, state, random);
-    }
-
-    private static void advanceWaterJobs(ServerLevel level, Proto proto, OrganoidStructureState state, RandomSource random) {
-        if (state.waterJobs().isEmpty()) {
-            return;
-        }
-        int blocksPerPass = SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_BLOCKS_PER_PASS.get();
-        state.waterJobs().removeIf(job -> {
-            job.advance(level, random, blocksPerPass);
-            return job.isComplete();
-        });
     }
 
     private static BlockPos resolveAnchor(ServerLevel level, Proto proto, OrganoidStructureState state, RandomSource random) {

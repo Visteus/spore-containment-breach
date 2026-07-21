@@ -31,14 +31,6 @@ public final class StructureGrowthJob {
     private final List<BlockPos> frontier = new ArrayList<>();
     private final Set<BlockPos> queued = new HashSet<>();
     private final int baseY;
-    private final int minX;
-    private final int maxX;
-    private final int minZ;
-    private final int maxZ;
-
-    /** Flat rectangle at a job's base layer, used to scope the goal #3.6 nearby-water sweep. */
-    public record Footprint(BlockPos min, BlockPos max) {
-    }
 
     public StructureGrowthJob(List<StructureTemplate.StructureBlockInfo> worldBlocks, boolean growDownward) {
         for (StructureTemplate.StructureBlockInfo info : worldBlocks) {
@@ -48,10 +40,6 @@ public final class StructureGrowthJob {
         baseY = growDownward
                 ? worldBlocks.stream().mapToInt(info -> info.pos().getY()).max().orElse(0)
                 : worldBlocks.stream().mapToInt(info -> info.pos().getY()).min().orElse(0);
-        minX = worldBlocks.stream().mapToInt(info -> info.pos().getX()).min().orElse(0);
-        maxX = worldBlocks.stream().mapToInt(info -> info.pos().getX()).max().orElse(0);
-        minZ = worldBlocks.stream().mapToInt(info -> info.pos().getZ()).min().orElse(0);
-        maxZ = worldBlocks.stream().mapToInt(info -> info.pos().getZ()).max().orElse(0);
         for (StructureTemplate.StructureBlockInfo info : worldBlocks) {
             if (info.pos().getY() == baseY) {
                 enqueue(info.pos());
@@ -66,11 +54,6 @@ public final class StructureGrowthJob {
     /** Every position this job will eventually place a block at, regardless of progress so far. */
     public Set<BlockPos> targetPositions() {
         return byPos.keySet();
-    }
-
-    /** Footprint rectangle at this job's base layer, for scoping the nearby-water sweep. */
-    public Footprint baseFootprint() {
-        return new Footprint(new BlockPos(minX, baseY, minZ), new BlockPos(maxX, baseY, maxZ));
     }
 
     /**

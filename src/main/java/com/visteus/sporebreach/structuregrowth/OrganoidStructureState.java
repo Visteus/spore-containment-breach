@@ -14,7 +14,6 @@ import net.minecraft.core.BlockPos;
 final class OrganoidStructureState {
 
     private final List<BlockPos> anchors = new ArrayList<>();
-    private final List<WaterReplacementJob> waterJobs = new ArrayList<>();
     private int structuresStarted;
     private StructureGrowthJob surfaceJob;
     private StructureGrowthJob undergroundJob;
@@ -68,10 +67,5 @@ final class OrganoidStructureState {
 
     void setPendingUndergroundGuaranteed(boolean guaranteed) {
         pendingUndergroundGuaranteed = guaranteed;
-    }
-
-    /** Water-replacement jobs spreading alongside whichever structure(s) started them. */
-    List<WaterReplacementJob> waterJobs() {
-        return waterJobs;
     }
 }

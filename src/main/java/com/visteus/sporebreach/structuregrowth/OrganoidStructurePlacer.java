@@ -20,8 +20,9 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * Shared structure-template plumbing for the goal #3 organoid structure growth system: resolving
  * templates, reading their full block list (bypassing vanilla's single-block-type {@link
  * StructureTemplate#filterBlocks}), sampling real terrain height for anchoring, and gating
- * underground growth to genuine terrain. See {@link WaterReplacementJob} for the nearby-water
- * spread this used to do in one bulk sweep.
+ * underground growth to genuine terrain. Nearby-water crusting is no longer tied to individual
+ * structures - see {@code com.visteus.sporebreach.biome.AreaWaterReplacementJob}, part of goal
+ * #5's biome spread.
  */
 public final class OrganoidStructurePlacer {
 

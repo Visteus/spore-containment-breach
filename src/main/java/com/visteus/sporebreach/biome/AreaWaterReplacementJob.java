@@ -17,13 +17,13 @@ import net.minecraft.world.level.ChunkPos;
 
 /**
  * Per-dimension shared frontier that gradually crusts surface water into {@code spore:crusted_bile}
- * under Goal #5 corruption biome territory, copying {@link
- * com.visteus.sporebreach.structuregrowth.WaterReplacementJob}'s BFS/frontier/budget shape - random
- * pop from the frontier each pass, for the same "reads as bile creeping into the water" organic
- * texture that job's own javadoc describes, rather than a uniform ring-by-ring sweep. Differs from
- * that job in two ways: seeded from a single water tile nearest an organoid's anchor (see {@link
- * #seedNearAnchor}) rather than a structure footprint ring, and bounded to a configurable depth
- * measured fresh off each block's own column heightmap at conversion time (not a fixed footprint
+ * under Goal #5 corruption biome territory. This is now the mod's only water-crusting system - it
+ * replaced the old per-structure {@code WaterReplacementJob} (goal #3.6), which shared the same
+ * BFS/frontier/budget shape: random pop from the frontier each pass, for the "reads as bile
+ * creeping into the water" organic texture, rather than a uniform ring-by-ring sweep. Differs from
+ * that retired job in two ways: seeded from a single water tile nearest an organoid's anchor (see
+ * {@link #seedWithinChunk}) rather than a structure footprint ring, and bounded to a configurable
+ * depth measured fresh off each block's own column heightmap at conversion time (not a fixed footprint
  * box) - so no bounds tracking is needed alongside the frontier itself. Seeding just the one closest
  * tile and letting connectivity carry the rest is deliberate: it's what makes the spread visibly
  * originate at the organoid rather than appearing simultaneously in every pond scattered across its

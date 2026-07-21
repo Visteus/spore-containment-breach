@@ -100,9 +100,6 @@ public final class SporeBreachServerConfig {
     public static final IntValue SCAMPER_MOUND_SUMMON_RANGE;
 
     public static final EnumValue<StructureGrowthMode> STRUCTURE_GROWTH_MODE;
-    public static final BooleanValue STRUCTURE_WATER_REPLACEMENT_ENABLED;
-    public static final IntValue STRUCTURE_WATER_REPLACEMENT_RADIUS;
-    public static final IntValue STRUCTURE_WATER_REPLACEMENT_BLOCKS_PER_PASS;
     public static final DoubleValue STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE;
 
     public static final IntValue MOUND_STRUCTURE_RECHECK_INTERVAL_TICKS;
@@ -254,15 +251,15 @@ public final class SporeBreachServerConfig {
                 .define("areaWaterReplacementEnabled", true);
         AREA_WATER_REPLACEMENT_DEPTH = builder
                 .comment(" Max depth (blocks) below the surface that water is converted to crusted bile.",
-                        " Default 4.")
-                .defineInRange("areaWaterReplacementDepth", 4, 1, 32);
+                        " Default 3.")
+                .defineInRange("areaWaterReplacementDepth", 3, 1, 32);
         AREA_WATER_REPLACEMENT_BLOCKS_PER_PASS = builder
-                .comment(" Max water blocks converted to crusted bile per recheck, shared across every column",
-                        " painted that pass. Default 6.")
-                .defineInRange("areaWaterReplacementBlocksPerPass", 6, 1, Integer.MAX_VALUE);
+                .comment(" Max water blocks converted to crusted bile per recheck.",
+                        " Default 16.")
+                .defineInRange("areaWaterReplacementBlocksPerPass", 16, 1, Integer.MAX_VALUE);
         AREA_WATER_RESEED_INTERVAL_TICKS = builder
                 .comment(" How often (in ticks) each organoid rolls a chance to seed a fresh water source",
-                        " somewhere within its biome radius, catching ponds not connected to its main spread.",
+                        " somewhere within its biome radius, catching pools not connected to its main spread.",
                         " Default 1200 (1 min).")
                 .defineInRange("areaWaterReseedIntervalTicks", 1200, 20, Integer.MAX_VALUE);
         AREA_WATER_RESEED_CHANCE = builder
@@ -282,17 +279,6 @@ public final class SporeBreachServerConfig {
                         " SPORE_BREACH_TOWERS replaces it with this mod's staged NBT structure growth.",
                         " Only one system runs at a time. Default SPORE_BREACH_TOWERS.")
                 .defineEnum("structureGrowthMode", StructureGrowthMode.SPORE_BREACH_TOWERS);
-        STRUCTURE_WATER_REPLACEMENT_ENABLED = builder
-                .comment(" Whether water near a surface structure's base is gradually replaced with crusted",
-                        " bile, spreading outward alongside the structure's own growth. Default true.")
-                .define("waterReplacementEnabled", true);
-        STRUCTURE_WATER_REPLACEMENT_RADIUS = builder
-                .comment(" Max radius (blocks) past a surface structure's base the bile spread can reach.",
-                        " Default 4.")
-                .defineInRange("waterReplacementRadius", 4, 0, 16);
-        STRUCTURE_WATER_REPLACEMENT_BLOCKS_PER_PASS = builder
-                .comment(" Max water blocks converted to crusted bile per building pass. Default 3.")
-                .defineInRange("waterReplacementBlocksPerPass", 3, 1, Integer.MAX_VALUE);
         STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE = builder
                 .comment(" Minimum fraction of an underground structure's blocks that must currently sit in",
                         " natural terrain for it to be allowed to grow. Default 0.25.")

@@ -62,11 +62,6 @@ public final class MoundStructureGrowth {
         state.setSurfaceJob(job);
         state.setPendingUndergroundAnchor(anchor);
         state.recordAnchor(anchor);
-
-        if (SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_ENABLED.get()) {
-            int radius = SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_RADIUS.get();
-            state.waterJobs().add(new WaterReplacementJob(level, job.baseFootprint(), radius));
-        }
     }
 
     /** Called on the pass cadence: advance whichever job is currently running for this Mound. */
@@ -90,20 +85,6 @@ public final class MoundStructureGrowth {
                 state.setUndergroundJob(null);
             }
         }
-
-        advanceWaterJobs(level, mound, state);
-    }
-
-    private static void advanceWaterJobs(ServerLevel level, Mound mound, OrganoidStructureState state) {
-        if (state.waterJobs().isEmpty()) {
-            return;
-        }
-        int blocksPerPass = SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_BLOCKS_PER_PASS.get();
-        RandomSource random = mound.getRandom();
-        state.waterJobs().removeIf(job -> {
-            job.advance(level, random, blocksPerPass);
-            return job.isComplete();
-        });
     }
 
     private static BlockPos resolveAnchor(ServerLevel level, Mound mound, OrganoidStructureState state, RandomSource random) {
