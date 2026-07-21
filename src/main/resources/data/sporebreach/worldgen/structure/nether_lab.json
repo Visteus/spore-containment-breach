@@ -12,5 +12,6 @@
     "absolute": 50
   },
   "use_expansion_hack": false,
-  "terrain_adaptation": "beard_thin"
+  "terrain_adaptation": "beard_thin",
+  "spawn_overrides": {}
 }
