@@ -356,7 +356,10 @@ public final class SporeBreachServerConfig {
                                 "spore:celltower",
                                 "spore:iceberg_mines",
                                 "spore:lodge",
-                                "spore:mass_grave"
+                                "spore:mass_grave",
+                                "sporebreach:end_lab",
+                                "sporebreach:nether_lab",
+                                "sporebreach:warped_lab"
                         ),
                         () -> "#namespace:tag_path or namespace:structure_id",
                         o -> o instanceof String
