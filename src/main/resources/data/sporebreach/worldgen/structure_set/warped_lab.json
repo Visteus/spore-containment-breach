@@ -1,0 +1,14 @@
+{
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 967427824,
+    "separation": 18,
+    "spacing": 46
+  },
+  "structures": [
+    {
+      "structure": "sporebreach:warped_lab",
+      "weight": 1
+    }
+  ]
+}
