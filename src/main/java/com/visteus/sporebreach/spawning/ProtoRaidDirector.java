@@ -7,9 +7,11 @@ import com.Harbinger.Spore.Sentities.Organoids.Proto;
 import com.Harbinger.Spore.Sentities.Organoids.Womb;
 import com.Harbinger.Spore.Sentities.Utility.Vanguard;
 import com.mojang.logging.LogUtils;
+import com.visteus.sporebreach.SporeContainmentBreach;
 import com.visteus.sporebreach.chunkloading.ChunkloadManager;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import com.visteus.sporebreach.tracking.OrganoidRegistry;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,12 +19,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import org.slf4j.Logger;
 
 /**
@@ -81,7 +87,9 @@ public final class ProtoRaidDirector {
 
         int searchRadius = SporeBreachServerConfig.PROTO_RAID_SEARCH_RADIUS.get();
         Optional<BlockPos> target = findRaidTarget(level, proto, searchRadius);
-        if (target.isEmpty() || SpawnAnchors.isWithinProtectedSpawnRadius(level, target.get())) {
+        if (target.isEmpty()
+                || SpawnAnchors.isWithinProtectedSpawnRadius(level, target.get())
+                || targetsForbiddenStructure(level, target.get())) {
             return;
         }
         BlockPos targetPos = target.get();
@@ -125,7 +133,48 @@ public final class ProtoRaidDirector {
             RaidRegistry.register(
                     level, new RaidRegistry.RaidRecord(UUID.randomUUID(), proto.getUUID(), targetPos, level.getGameTime(), raiderIds)
             );
+            LOGGER.info(
+                    "spore_containment_breach: Proto {} at {} dispatched a raid of {} ({}) targeting {}",
+                    proto.getUUID(), proto.blockPosition(), raiderIds.size(), summarizeCounts(perTypeCounts), targetPos
+            );
         }
+    }
+
+    private static String summarizeCounts(Map<EntityType<?>, Integer> perTypeCounts) {
+        StringBuilder summary = new StringBuilder();
+        for (Map.Entry<EntityType<?>, Integer> entry : perTypeCounts.entrySet()) {
+            if (summary.length() > 0) {
+                summary.append(", ");
+            }
+            summary.append(entry.getValue()).append("x ").append(EntityType.getKey(entry.getKey()));
+        }
+        return summary.toString();
+    }
+
+    /**
+     * Vetoes raid targets that fall within a naturally-generated structure from either {@code
+     * spore} (e.g. its lab/church/military_camp ruins) or this mod's own namespace, so raids don't
+     * path raiders into a preexisting structure that a player might be actively exploring/looting.
+     * Reads structure references already cached on the target's loaded chunk, same idiom as {@link
+     * com.visteus.sporebreach.genesis.MoundGenesisDirector#scanNear}.
+     */
+    private static boolean targetsForbiddenStructure(ServerLevel level, BlockPos pos) {
+        Map<Structure, LongSet> nearby = level.structureManager().getAllStructuresAt(pos);
+        if (nearby.isEmpty()) {
+            return false;
+        }
+        for (Structure structure : nearby.keySet()) {
+            Holder<Structure> holder = level.registryAccess().registryOrThrow(Registries.STRUCTURE).wrapAsHolder(structure);
+            Optional<ResourceKey<Structure>> key = holder.unwrapKey();
+            if (key.isEmpty()) {
+                continue;
+            }
+            String namespace = key.get().location().getNamespace();
+            if (namespace.equals("spore") || namespace.equals(SporeContainmentBreach.MODID)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
