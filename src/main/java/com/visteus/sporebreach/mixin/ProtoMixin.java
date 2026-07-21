@@ -61,4 +61,16 @@ public abstract class ProtoMixin {
             self.getPersistentData().putLong(WOMB_SIGNAL_COOLDOWN_KEY, serverLevel.getGameTime() + cooldownTicks);
         }
     }
+
+    /**
+     * Cancels base Spore's own procedural shell growth ({@code CasingGenerator.generateChasing},
+     * invoked from here) when this mod's staged NBT structure growth (goal #3) is active, so the
+     * two systems never both build around the same Proto-Hivemind.
+     */
+    @Inject(method = "generateCasing", at = @At("HEAD"), cancellable = true)
+    private void sporebreach$gateBaseCasingGrowth(CallbackInfo ci) {
+        if (SporeBreachServerConfig.STRUCTURE_GROWTH_MODE.get() == SporeBreachServerConfig.StructureGrowthMode.SPORE_BREACH_TOWERS) {
+            ci.cancel();
+        }
+    }
 }
