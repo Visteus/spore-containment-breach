@@ -392,12 +392,12 @@ public final class SporeBreachServerConfig {
         builder.push("proto");
         PROTO_RAID_COOLDOWN_MIN_TICKS = builder
                 .comment(" Lower bound of the randomized cooldown between raids sent out by a Proto-Hivemind.",
-                        " Default 18000 (15 min).")
-                .defineInRange("protoRaidCooldownMinTicks", 18000, 20, Integer.MAX_VALUE);
+                        " Default 12000 (10 min).")
+                .defineInRange("protoRaidCooldownMinTicks", 12000, 20, Integer.MAX_VALUE);
         PROTO_RAID_COOLDOWN_MAX_TICKS = builder
                 .comment(" Upper bound of the randomized cooldown between raids sent out by a Proto-Hivemind.",
-                        " Default 72000 (1 hr). Should be >= protoRaidCooldownMinTicks.")
-                .defineInRange("protoRaidCooldownMaxTicks", 72000, 20, Integer.MAX_VALUE);
+                        " Default 54000 (45 min). Should be >= protoRaidCooldownMinTicks.")
+                .defineInRange("protoRaidCooldownMaxTicks", 54000, 20, Integer.MAX_VALUE);
         PROTO_RAID_SEARCH_RADIUS = builder
                 .comment(" Radius (blocks) a Proto-Hivemind searches for raid targets - structures or players.",
                         " Default 300.")
