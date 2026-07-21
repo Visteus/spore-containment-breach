@@ -37,6 +37,7 @@ public final class SporeBreachServerConfig {
     public static final IntValue PROTO_RAID_SEARCH_RADIUS;
     public static final IntValue PROTO_RAID_GROUP_SIZE_MIN;
     public static final IntValue PROTO_RAID_GROUP_SIZE_MAX;
+    public static final DoubleValue PROTO_RAID_GROUP_SIZE_MAX_MULTIPLIER;
     public static final ConfigValue<List<? extends String>> PROTO_RAID_SPAWN_POOL;
     public static final ConfigValue<List<? extends String>> PROTO_CALAMITY_SPAWN_POOL;
     public static final BooleanValue PROTO_RAID_DIRECTED_TRAVEL;
@@ -408,6 +409,11 @@ public final class SporeBreachServerConfig {
         PROTO_RAID_GROUP_SIZE_MAX = builder
                 .comment(" Baseline maximum raid group size. Scales up with World Corruption. Default 5.")
                 .defineInRange("protoRaidGroupSizeMax", 5, 0, Integer.MAX_VALUE);
+        PROTO_RAID_GROUP_SIZE_MAX_MULTIPLIER = builder
+                .comment(" How much protoRaidGroupSizeMin/Max are multiplied by at maximum World Corruption,",
+                        " scaling linearly from 1.0 at zero corruption. Set to 1.0 to disable scaling.",
+                        " Default 10.0.")
+                .defineInRange("protoRaidGroupSizeMaxMultiplier", 10.0, 1.0, 1000.0);
         PROTO_RAID_SPAWN_POOL = builder
                 .comment(" Entities a Proto-Hivemind may send on a raid. Format: \"entityId|weight|min|max\".",
                         " \"max\" caps how many of that entity a single raid can include (0 or less means unlimited).",
