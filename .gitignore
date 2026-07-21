@@ -1,5 +1,5 @@
-/reference-mods
-/docs
+# decompiled source of mods for comparison, never commit
+/references
 
 # Gradle / build output
 /build
