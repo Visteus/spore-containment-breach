@@ -15,10 +15,10 @@ final class OrganoidStructureState {
 
     private final List<BlockPos> anchors = new ArrayList<>();
     private int structuresStarted;
-    private boolean toppingPlaced;
     private StructureGrowthJob surfaceJob;
     private StructureGrowthJob undergroundJob;
     private BlockPos pendingUndergroundAnchor;
+    private boolean pendingUndergroundGuaranteed;
 
     List<BlockPos> anchors() {
         return anchors;
@@ -31,14 +31,6 @@ final class OrganoidStructureState {
     void recordAnchor(BlockPos pos) {
         anchors.add(pos);
         structuresStarted++;
-    }
-
-    boolean toppingPlaced() {
-        return toppingPlaced;
-    }
-
-    void markToppingPlaced() {
-        toppingPlaced = true;
     }
 
     boolean hasActiveJob() {
@@ -67,5 +59,13 @@ final class OrganoidStructureState {
 
     void setPendingUndergroundAnchor(BlockPos pos) {
         pendingUndergroundAnchor = pos;
+    }
+
+    boolean pendingUndergroundGuaranteed() {
+        return pendingUndergroundGuaranteed;
+    }
+
+    void setPendingUndergroundGuaranteed(boolean guaranteed) {
+        pendingUndergroundGuaranteed = guaranteed;
     }
 }

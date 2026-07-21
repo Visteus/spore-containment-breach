@@ -87,6 +87,8 @@ public final class SporeBreachServerConfig {
     public static final IntValue SCAMPER_MOUND_SUMMON_RANGE;
 
     public static final EnumValue<StructureGrowthMode> STRUCTURE_GROWTH_MODE;
+    public static final BooleanValue STRUCTURE_WATER_REPLACEMENT_ENABLED;
+    public static final IntValue STRUCTURE_WATER_REPLACEMENT_RADIUS;
 
     public static final IntValue MOUND_STRUCTURE_RECHECK_INTERVAL_TICKS;
     public static final IntValue MOUND_STRUCTURE_PASS_INTERVAL_TICKS;
@@ -102,14 +104,12 @@ public final class SporeBreachServerConfig {
     public static final IntValue PROTO_STRUCTURE_RECHECK_INTERVAL_TICKS;
     public static final IntValue PROTO_STRUCTURE_PASS_INTERVAL_TICKS;
     public static final IntValue PROTO_STRUCTURE_MIN_AGE;
-    public static final IntValue PROTO_STRUCTURE_TOPPING_AGE;
     public static final IntValue PROTO_STRUCTURE_MAX_PER_PROTO;
     public static final DoubleValue PROTO_STRUCTURE_PLACEMENT_CHANCE;
     public static final IntValue PROTO_STRUCTURE_MIN_DISTANCE;
     public static final IntValue PROTO_STRUCTURE_BIOMASS_COST_PER_PASS;
     public static final IntValue PROTO_STRUCTURE_BLOCKS_PER_PASS;
-    public static final ConfigValue<List<? extends String>> PROTO_STRUCTURE_INTERMEDIATE_POOL;
-    public static final ConfigValue<List<? extends String>> PROTO_STRUCTURE_TOPPING_POOL;
+    public static final ConfigValue<List<? extends String>> PROTO_STRUCTURE_POOL;
     public static final DoubleValue PROTO_STRUCTURE_UNDERGROUND_CHANCE;
     public static final ConfigValue<List<? extends String>> PROTO_STRUCTURE_UNDERGROUND_POOL;
 
@@ -224,6 +224,14 @@ public final class SporeBreachServerConfig {
                         " SPORE_BREACH_TOWERS replaces it with this mod's staged NBT structure growth.",
                         " Only one system runs at a time. Default SPORE_BREACH_TOWERS.")
                 .defineEnum("structureGrowthMode", StructureGrowthMode.SPORE_BREACH_TOWERS);
+        STRUCTURE_WATER_REPLACEMENT_ENABLED = builder
+                .comment(" Whether water sources near a freshly-grown surface structure's base are replaced",
+                        " with crusted bile. Default true.")
+                .define("waterReplacementEnabled", true);
+        STRUCTURE_WATER_REPLACEMENT_RADIUS = builder
+                .comment(" Radius (blocks) around a completed surface structure's base checked for water to",
+                        " replace. Default 4.")
+                .defineInRange("waterReplacementRadius", 4, 0, 16);
         builder.pop();
 
         builder.push("mound");
@@ -328,7 +336,8 @@ public final class SporeBreachServerConfig {
                         " Default 0.5.")
                 .defineInRange("undergroundChance", 0.5, 0.0, 1.0);
         MOUND_STRUCTURE_UNDERGROUND_POOL = builder
-                .comment(" Underground structures a Mound may grow beneath a surface structure.",
+                .comment(" Underground structures a Mound may grow beneath a surface structure. Skipped if the",
+                        " ground there isn't natural terrain (e.g. another organoid's structure).",
                         " Format: \"structureId|weight\".")
                 .defineListAllowEmpty(
                         "undergroundPool",
@@ -459,22 +468,17 @@ public final class SporeBreachServerConfig {
                 .defineInRange("recheckIntervalTicks", 1200, 20, Integer.MAX_VALUE);
         PROTO_STRUCTURE_PASS_INTERVAL_TICKS = builder
                 .comment(" How often (in ticks) an in-progress structure growth job is advanced by one",
-                        " building pass. Default 100 (5s).")
-                .defineInRange("passIntervalTicks", 100, 20, Integer.MAX_VALUE);
+                        " building pass. Default 40 (2s).")
+                .defineInRange("passIntervalTicks", 40, 20, Integer.MAX_VALUE);
         PROTO_STRUCTURE_MIN_AGE = builder
                 .comment(" Minimum Proto-Hivemind age before it can start growing structures. Default 2.")
                 .defineInRange("minAge", 2, 0, Integer.MAX_VALUE);
-        PROTO_STRUCTURE_TOPPING_AGE = builder
-                .comment(" Age at which a Proto-Hivemind grows its single topping structure. Default 20",
-                        " (matches protoMaxAge by default).")
-                .defineInRange("toppingAge", 20, 0, Integer.MAX_VALUE);
         PROTO_STRUCTURE_MAX_PER_PROTO = builder
-                .comment(" Max structures a single Proto-Hivemind will grow around itself, including the",
-                        " topping structure. Default 5.")
+                .comment(" Max structures a single Proto-Hivemind will grow around itself. Default 5.")
                 .defineInRange("maxPerProto", 5, 1, Integer.MAX_VALUE);
         PROTO_STRUCTURE_PLACEMENT_CHANCE = builder
                 .comment(" Chance, checked every recheckIntervalTicks, that a Proto-Hivemind starts growing",
-                        " its next intermediate structure. Default 0.1.")
+                        " its next structure. Default 0.1.")
                 .defineInRange("placementChance", 0.1, 0.0, 1.0);
         PROTO_STRUCTURE_MIN_DISTANCE = builder
                 .comment(" Minimum distance (blocks) between a Proto-Hivemind's 2nd+ grown structure and its",
@@ -486,46 +490,37 @@ public final class SporeBreachServerConfig {
                         " shell growth spends. A pass is skipped if biomass is too low. Default 8.")
                 .defineInRange("biomassCostPerPass", 8, 0, Integer.MAX_VALUE);
         PROTO_STRUCTURE_BLOCKS_PER_PASS = builder
-                .comment(" Max blocks placed per building pass. Default 30.")
-                .defineInRange("blocksPerPass", 30, 1, Integer.MAX_VALUE);
-        PROTO_STRUCTURE_INTERMEDIATE_POOL = builder
-                .comment(" Structures a Proto-Hivemind may grow around itself before its topping structure.",
-                        " Format: \"structureId|weight\".")
+                .comment(" Max blocks placed per building pass. Default 80.")
+                .defineInRange("blocksPerPass", 80, 1, Integer.MAX_VALUE);
+        PROTO_STRUCTURE_POOL = builder
+                .comment(" Structures a Proto-Hivemind may grow around itself. Format: \"structureId|weight\".")
                 .defineListAllowEmpty(
-                        "intermediatePool",
+                        "structurePool",
                         () -> Lists.newArrayList(
                                 "spore_containment_breach:proto_spire_hollow|40",
+                                "spore_containment_breach:proto_spire_hollow_alt|40",
                                 "spore_containment_breach:proto_spire_apex|20",
-                                "spore_containment_breach:proto_spire_hollow_alt|40"
-                        ),
-                        () -> "modid:structure_id|weight",
-                        o -> o instanceof String
-                );
-        PROTO_STRUCTURE_TOPPING_POOL = builder
-                .comment(" The single structure a Proto-Hivemind grows once it reaches toppingAge.",
-                        " Format: \"structureId|weight\".")
-                .defineListAllowEmpty(
-                        "toppingPool",
-                        () -> Lists.newArrayList(
-                                "spore_containment_breach:proto_spire_needle|50",
-                                "spore_containment_breach:proto_spire_shelf|50"
+                                "spore_containment_breach:proto_spire_needle|20",
+                                "spore_containment_breach:proto_spire_shelf|20"
                         ),
                         () -> "modid:structure_id|weight",
                         o -> o instanceof String
                 );
         PROTO_STRUCTURE_UNDERGROUND_CHANCE = builder
                 .comment(" Chance an underground structure grows beneath a completed surface structure.",
+                        " Always guaranteed for a Proto-Hivemind's first structure regardless of this chance.",
                         " Default 0.5.")
                 .defineInRange("undergroundChance", 0.5, 0.0, 1.0);
         PROTO_STRUCTURE_UNDERGROUND_POOL = builder
                 .comment(" Underground structures a Proto-Hivemind may grow beneath a surface structure.",
+                        " Skipped if the ground there isn't natural terrain (e.g. another organoid's structure).",
                         " Format: \"structureId|weight\".")
                 .defineListAllowEmpty(
                         "undergroundPool",
                         () -> Lists.newArrayList(
                                 "spore_containment_breach:underground_pillar_small|30",
                                 "spore_containment_breach:underground_pillar_large|25",
-                                "spore_containment_breach:underground_chambers|25",
+                                // "spore_containment_breach:underground_chambers|25",
                                 "spore_containment_breach:underground_column|20"
                         ),
                         () -> "modid:structure_id|weight",

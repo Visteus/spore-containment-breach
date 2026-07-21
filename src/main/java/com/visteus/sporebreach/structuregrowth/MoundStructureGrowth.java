@@ -76,6 +76,10 @@ public final class MoundStructureGrowth {
         if (state.surfaceJob() != null) {
             state.surfaceJob().advance(level, mound, random, blocksPerPass);
             if (state.surfaceJob().isComplete()) {
+                if (SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_ENABLED.get()) {
+                    OrganoidStructurePlacer.replaceNearbyWaterWithBile(
+                            level, state.surfaceJob().baseFootprint(), SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_RADIUS.get());
+                }
                 state.setSurfaceJob(null);
                 maybeStartUnderground(level, mound, state);
             }
@@ -109,6 +113,11 @@ public final class MoundStructureGrowth {
     }
 
     private static void maybeStartUnderground(ServerLevel level, Mound mound, OrganoidStructureState state) {
+        BlockPos anchor = state.pendingUndergroundAnchor();
+        if (!OrganoidStructurePlacer.isNaturalGround(level, anchor.below())) {
+            return;
+        }
+
         RandomSource random = mound.getRandom();
         if (random.nextDouble() >= SporeBreachServerConfig.MOUND_STRUCTURE_UNDERGROUND_CHANCE.get()) {
             return;

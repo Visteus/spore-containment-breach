@@ -18,10 +18,10 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 /**
  * Grows the goal #3 spire field around a single Proto-Hivemind: the first structure is always
  * centered on the Proto itself (terrain-anchored, collision-pushed - see
- * {@link StructureGrowthJob}); the 2nd+ intermediate spires keep a random offset spread away from
- * earlier anchors. Once {@code toppingAge} is reached, exactly one topping spire replaces the
- * intermediate roll. Passes are gated on {@link Proto#getBiomass()}, the same resource base
- * Spore's own {@code CasingGenerator} shell growth spends - see the Goal #3 plan.
+ * {@link StructureGrowthJob}); the 2nd+ spires keep a random offset spread away from earlier
+ * anchors, drawn from the same weighted pool. Passes are gated on {@link Proto#getBiomass()}, the
+ * same resource base Spore's own {@code CasingGenerator} shell growth spends - see the Goal #3
+ * plan.
  */
 public final class ProtoStructureGrowth {
 
@@ -43,33 +43,20 @@ public final class ProtoStructureGrowth {
         if (state.hasActiveJob()) {
             return;
         }
+        if (state.structuresStarted() >= SporeBreachServerConfig.PROTO_STRUCTURE_MAX_PER_PROTO.get()) {
+            return;
+        }
 
-        int toppingAge = SporeBreachServerConfig.PROTO_STRUCTURE_TOPPING_AGE.get();
-        boolean startTopping = !state.toppingPlaced() && age >= toppingAge;
         RandomSource random = proto.getRandom();
+        boolean isFirst = state.structuresStarted() == 0;
+        if (!isFirst && random.nextDouble() >= SporeBreachServerConfig.PROTO_STRUCTURE_PLACEMENT_CHANCE.get()) {
+            return;
+        }
 
-        StructurePoolEntry entry;
-        if (startTopping) {
-            Optional<StructurePoolEntry> picked =
-                    StructurePool.fromConfig(SporeBreachServerConfig.PROTO_STRUCTURE_TOPPING_POOL.get()).pickWeighted(random);
-            if (picked.isEmpty()) {
-                return;
-            }
-            entry = picked.get();
-        } else {
-            int maxIntermediate = SporeBreachServerConfig.PROTO_STRUCTURE_MAX_PER_PROTO.get() - 1;
-            if (state.structuresStarted() >= maxIntermediate) {
-                return;
-            }
-            if (random.nextDouble() >= SporeBreachServerConfig.PROTO_STRUCTURE_PLACEMENT_CHANCE.get()) {
-                return;
-            }
-            Optional<StructurePoolEntry> picked =
-                    StructurePool.fromConfig(SporeBreachServerConfig.PROTO_STRUCTURE_INTERMEDIATE_POOL.get()).pickWeighted(random);
-            if (picked.isEmpty()) {
-                return;
-            }
-            entry = picked.get();
+        Optional<StructurePoolEntry> picked =
+                StructurePool.fromConfig(SporeBreachServerConfig.PROTO_STRUCTURE_POOL.get()).pickWeighted(random);
+        if (picked.isEmpty()) {
+            return;
         }
 
         BlockPos anchor = resolveAnchor(level, proto, state, random);
@@ -77,14 +64,12 @@ public final class ProtoStructureGrowth {
             return;
         }
 
-        StructureTemplate template = OrganoidStructurePlacer.resolveTemplate(level, entry.structureId());
+        StructureTemplate template = OrganoidStructurePlacer.resolveTemplate(level, picked.get().structureId());
         StructureGrowthJob job = buildJob(template, anchor, false);
         state.setSurfaceJob(job);
         state.setPendingUndergroundAnchor(anchor);
+        state.setPendingUndergroundGuaranteed(isFirst);
         state.recordAnchor(anchor);
-        if (startTopping) {
-            state.markToppingPlaced();
-        }
     }
 
     /** Called on the pass cadence: advance whichever job is currently running for this Proto-Hivemind. */
@@ -105,6 +90,10 @@ public final class ProtoStructureGrowth {
             proto.eatBiomass(costPerPass);
             state.surfaceJob().advance(level, proto, random, blocksPerPass);
             if (state.surfaceJob().isComplete()) {
+                if (SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_ENABLED.get()) {
+                    OrganoidStructurePlacer.replaceNearbyWaterWithBile(
+                            level, state.surfaceJob().baseFootprint(), SporeBreachServerConfig.STRUCTURE_WATER_REPLACEMENT_RADIUS.get());
+                }
                 state.setSurfaceJob(null);
                 maybeStartUnderground(level, proto, state);
             }
@@ -139,8 +128,14 @@ public final class ProtoStructureGrowth {
     }
 
     private static void maybeStartUnderground(ServerLevel level, Proto proto, OrganoidStructureState state) {
+        BlockPos anchor = state.pendingUndergroundAnchor();
+        if (!OrganoidStructurePlacer.isNaturalGround(level, anchor.below())) {
+            return;
+        }
+
         RandomSource random = proto.getRandom();
-        if (random.nextDouble() >= SporeBreachServerConfig.PROTO_STRUCTURE_UNDERGROUND_CHANCE.get()) {
+        if (!state.pendingUndergroundGuaranteed()
+                && random.nextDouble() >= SporeBreachServerConfig.PROTO_STRUCTURE_UNDERGROUND_CHANCE.get()) {
             return;
         }
 
