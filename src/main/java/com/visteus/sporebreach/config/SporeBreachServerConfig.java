@@ -316,8 +316,8 @@ public final class SporeBreachServerConfig {
                                 .defineInRange("deadScarDecayIntervalTicks", 100, 20, Integer.MAX_VALUE);
                         DEAD_SCAR_DECAY_MAX_CONCURRENT_SWEEPS = builder
                                 .comment(" Max dead scar columns force-loaded at once, per dimension, purely to sweep them for",
-                                        " decay. Keeps this feature's extra chunkloading footprint small regardless of how",
-                                        " large the backlog grows. Default 2.")
+                                        " decay. Keeps this feature's extra chunkloading footprint small regardless of how large the backlog grows.",
+                                        " Default 2.")
                                 .defineInRange("deadScarDecayMaxConcurrentSweeps", 2, 1, Integer.MAX_VALUE);
                         DEAD_SCAR_DECAY_BLOCKS_PER_PASS = builder
                                 .comment(" Max block positions examined per swept column per recheck. Default 64.")
