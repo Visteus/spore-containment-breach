@@ -29,6 +29,9 @@ public final class CorruptionAgeDirector {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!event.getServer().tickRateManager().runsNormally()) {
+            return;
+        }
         if (!SporeBreachServerConfig.CORRUPTION_ENABLED.get()) {
             return;
         }

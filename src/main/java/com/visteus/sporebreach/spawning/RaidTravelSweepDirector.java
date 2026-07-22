@@ -31,6 +31,9 @@ public final class RaidTravelSweepDirector {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!event.getServer().tickRateManager().runsNormally()) {
+            return;
+        }
         tickCounter++;
         int interval = SporeBreachServerConfig.PROTO_RAID_TRAVEL_SWEEP_INTERVAL_TICKS.get();
         if (interval <= 0 || tickCounter % interval != 0) {

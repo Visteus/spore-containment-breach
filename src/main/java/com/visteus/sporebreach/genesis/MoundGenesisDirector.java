@@ -43,6 +43,9 @@ public final class MoundGenesisDirector {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!event.getServer().tickRateManager().runsNormally()) {
+            return;
+        }
         if (!SporeBreachServerConfig.MOUND_GENESIS_ENABLED.get()) {
             return;
         }

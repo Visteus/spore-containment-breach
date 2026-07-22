@@ -38,6 +38,9 @@ public final class OrganoidSpawnDirector {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!event.getServer().tickRateManager().runsNormally()) {
+            return;
+        }
         tickCounter++;
         int interval = SporeBreachServerConfig.DIRECTOR_TICK_INTERVAL_TICKS.get();
         if (interval <= 0 || tickCounter % interval != 0) {

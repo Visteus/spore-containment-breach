@@ -26,6 +26,9 @@ public final class BiomePaintGrowthDirector {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!event.getServer().tickRateManager().runsNormally()) {
+            return;
+        }
         if (!SporeBreachServerConfig.BIOME_PAINT_ENABLED.get()) {
             return;
         }

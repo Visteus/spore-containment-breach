@@ -22,6 +22,9 @@ public final class ChunkloadGrowthDirector {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!event.getServer().tickRateManager().runsNormally()) {
+            return;
+        }
         tickCounter++;
         int interval = SporeBreachServerConfig.CHUNKLOAD_RECHECK_INTERVAL_TICKS.get();
         if (interval <= 0 || tickCounter % interval != 0) {

@@ -41,6 +41,9 @@ public final class ProtoOutpostSeedDirector {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!event.getServer().tickRateManager().runsNormally()) {
+            return;
+        }
         if (!SporeBreachServerConfig.PROTO_OUTPOST_SEED_ENABLED.get()) {
             return;
         }

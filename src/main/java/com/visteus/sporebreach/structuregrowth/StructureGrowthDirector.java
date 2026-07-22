@@ -31,6 +31,9 @@ public final class StructureGrowthDirector {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
+        if (!event.getServer().tickRateManager().runsNormally()) {
+            return;
+        }
         if (SporeBreachServerConfig.STRUCTURE_GROWTH_MODE.get() != StructureGrowthMode.SPORE_BREACH_TOWERS) {
             return;
         }
