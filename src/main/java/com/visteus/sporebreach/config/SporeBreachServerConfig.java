@@ -237,14 +237,18 @@ public final class SporeBreachServerConfig {
                                 .defineListAllowEmpty(
                                         "chunkloadEntityOwners",
                                         () -> Lists.newArrayList(
-                                                "spore:mound|1|3|1|54000",
-                                                "spore:proto|3|9|2|144000"
+                                                "spore:mound|1|3|1|30000",
+                                                "spore:proto|3|9|2|108000"
                                         ),
                                         () -> "modid:entity_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius",
                                         o -> o instanceof String
                                 );
                         CHUNKLOAD_BLOCK_OWNERS = builder
-                                .comment(" Same format as chunkloadEntityOwners, keyed by block id instead. Empty by default.")
+                                .comment(
+                                        " Same format as chunkloadEntityOwners, keyed by block id instead.",
+                                        " Useful if you want outpost watchers or similar blocks to chunkload around themselves.",
+                                        " Empty by default."
+                                )
                                 .defineListAllowEmpty(
                                         "chunkloadBlockOwners", Lists::newArrayList,
                                         () -> "modid:block_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius", o -> o instanceof String
