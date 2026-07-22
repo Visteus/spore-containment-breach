@@ -131,6 +131,14 @@ public final class SporeBreachServerConfig {
     public static final DoubleValue PROTO_STRUCTURE_UNDERGROUND_CHANCE;
     public static final ConfigValue<List<? extends String>> PROTO_STRUCTURE_UNDERGROUND_POOL;
 
+    public static final BooleanValue PROTO_OUTPOST_SEED_ENABLED;
+    public static final IntValue PROTO_OUTPOST_SEED_MIN_AGE;
+    public static final IntValue PROTO_OUTPOST_SEED_COOLDOWN_TICKS;
+    public static final IntValue PROTO_OUTPOST_SEED_MIN_DISTANCE;
+    public static final IntValue PROTO_OUTPOST_SEED_MAX_DISTANCE;
+    public static final IntValue PROTO_OUTPOST_SEED_MOUND_CHECK_RADIUS;
+    public static final IntValue PROTO_OUTPOST_SEED_MOUND_LIMIT;
+
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
@@ -221,16 +229,16 @@ public final class SporeBreachServerConfig {
                                 .defineInRange("chunkloadRecheckIntervalTicks", 200, 20, Integer.MAX_VALUE);
                         CHUNKLOAD_ENTITY_OWNERS = builder
                                 .comment(" Entities that chunkload around themselves, growing from a starting radius to a max",
-                                        " radius (radius=1 is a 3x3 area) as they age. tickingRadius is the inner radius that",
-                                        " keeps actively simulating; chunks beyond it out to the current radius stay loaded but",
-                                        " idle. All radii are clamped to 1-10.",
+                                        " radius (radius=1 is a 3x3 area) as they age. 'tickingRadius' is the inner radius that",
+                                        " keeps actively simulating; chunks beyond it out to the current radius stay loaded but idle. ",
+                                        " Maximum radius of 10 chunks.",
                                         " Format: \"entityId|minRadius|maxRadius|tickingRadius|ticksToMaxRadius\"."
                                 )
                                 .defineListAllowEmpty(
                                         "chunkloadEntityOwners",
                                         () -> Lists.newArrayList(
                                                 "spore:mound|1|3|1|54000",
-                                                "spore:proto|3|7|2|144000"
+                                                "spore:proto|3|9|2|144000"
                                         ),
                                         () -> "modid:entity_id|minRadius|maxRadius|tickingRadius|ticksToMaxRadius",
                                         o -> o instanceof String
@@ -460,7 +468,7 @@ public final class SporeBreachServerConfig {
                 builder.push("proto");
                         PROTO_MAX_AGE = builder
                                 .comment(" Maximum 'age counter' for Proto-Hiveminds. Default 20.")
-                                .defineInRange("protoMaxAge", 20, 0, Integer.MAX_VALUE);
+                                .defineInRange("protoMaxAge", 4, 0, Integer.MAX_VALUE);
                         PROTO_AGE_UP_INTERVAL_TICKS = builder
                                 .comment(" Ticks between Proto-Hivemind age-ups. Default 18000 (15 min)")
                                 .defineInRange("protoAgeUpIntervalTicks", 18000, 20, Integer.MAX_VALUE);
@@ -516,15 +524,17 @@ public final class SporeBreachServerConfig {
                                                 " Format: \"entityId|weight|min|max\"."
                                         )
                                         .defineListAllowEmpty(
-                                                "protoCalamitySpawnPool", 
-                                                Lists::newArrayList, (
+                                                "protoCalamitySpawnPool",
+                                                () -> Lists.newArrayList(
                                                         "spore:stahl|100|1|1",
                                                         "spore:sieger|100|1|1",
                                                         "spore:howitzer|80|1|1",
                                                         "spore:hohlfresser|25|1|1",
                                                         "spore:hindenburg|15|1|1",
-                                                        "spore:verfall|15|1|1",
-                                                ) -> "modid:entity_id|weight|min|max", o -> o instanceof String
+                                                        "spore:verfall|15|1|1"
+                                                ),
+                                                () -> "modid:entity_id|weight|min|max",
+                                                o -> o instanceof String
                                         );
 
                                 PROTO_RAID_DIRECTED_TRAVEL = builder
@@ -571,8 +581,8 @@ public final class SporeBreachServerConfig {
                                                 " building pass. Default 40 (2s).")
                                         .defineInRange("passIntervalTicks", 40, 20, Integer.MAX_VALUE);
                                 PROTO_STRUCTURE_MIN_AGE = builder
-                                        .comment(" Minimum Proto-Hivemind age before it can start growing structures. Default 2.")
-                                        .defineInRange("minAge", 2, 0, Integer.MAX_VALUE);
+                                        .comment(" Minimum Proto-Hivemind age before it can start growing structures. Default 1.")
+                                        .defineInRange("minAge", 1, 0, Integer.MAX_VALUE);
                                 PROTO_STRUCTURE_MAX_PER_PROTO = builder
                                         .comment(" Max structures a single Proto-Hivemind will grow around itself. Default 5.")
                                         .defineInRange("maxPerProto", 5, 1, Integer.MAX_VALUE);
@@ -626,6 +636,36 @@ public final class SporeBreachServerConfig {
                                                 () -> "modid:structure_id|weight",
                                                 o -> o instanceof String
                                         );
+                        builder.pop();
+
+                        builder.push("outposts");
+                                PROTO_OUTPOST_SEED_ENABLED = builder
+                                        .comment(" Whether Proto-Hiveminds seed new Mound outposts at a distance from themselves",
+                                                " to extend the infected area. Default true.")
+                                        .define("enabled", true);
+                                PROTO_OUTPOST_SEED_MIN_AGE = builder
+                                        .comment(" Minimum Proto-Hivemind age before it starts rolling to seed outposts. Default 2.")
+                                        .defineInRange("minAge", 2, 0, Integer.MAX_VALUE);
+                                PROTO_OUTPOST_SEED_COOLDOWN_TICKS = builder
+                                        .comment(" Minimum ticks between outpost-seeding rolls from the same Proto-Hivemind.",
+                                                " Default 12000 (10 min).")
+                                        .defineInRange("cooldownTicks", 12000, 20, Integer.MAX_VALUE);
+                                PROTO_OUTPOST_SEED_MIN_DISTANCE = builder
+                                        .comment(" Minimum distance (blocks) from a Proto-Hivemind that a new outpost may be seeded.",
+                                                " Default 96.")
+                                        .defineInRange("minDistance", 96, 0, Integer.MAX_VALUE);
+                                PROTO_OUTPOST_SEED_MAX_DISTANCE = builder
+                                        .comment(" Maximum distance (blocks) from a Proto-Hivemind that a new outpost may be seeded.",
+                                                " Should be >= minDistance. Default 128.")
+                                        .defineInRange("maxDistance", 128, 0, Integer.MAX_VALUE);
+                                PROTO_OUTPOST_SEED_MOUND_CHECK_RADIUS = builder
+                                        .comment(" Radius (blocks) around a candidate outpost site checked for existing Mounds",
+                                                " before seeding a new one. Default 32.")
+                                        .defineInRange("moundCheckRadius", 32, 0, Integer.MAX_VALUE);
+                                PROTO_OUTPOST_SEED_MOUND_LIMIT = builder
+                                        .comment(" Max Mounds allowed within moundCheckRadius of a candidate site before seeding",
+                                                " there is skipped for this roll. Default 1.")
+                                        .defineInRange("moundLimit", 1, 0, Integer.MAX_VALUE);
                         builder.pop();
                 builder.pop();
 
