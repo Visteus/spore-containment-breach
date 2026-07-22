@@ -125,6 +125,7 @@ public final class BiomePaintManager {
             return;
         }
         BiomePaintData.ClaimResult result = BiomePaintData.claim(level, pos, ownerId);
+        DeadScarDecayManager.cancel(level, pos);
         if (result.needsTicket()) {
             ChunkloadManager.forceBiomePaintChunk(level, ownerId, pos.x, pos.z, true);
         }
@@ -302,6 +303,7 @@ public final class BiomePaintManager {
             if (ticketOwner != null) {
                 ChunkloadManager.forceBiomePaintChunk(level, ticketOwner, pos.x, pos.z, false);
             }
+            DeadScarDecayManager.enqueue(level, pos);
             LOGGER.debug("sporebreach: downgraded chunk {} to {}", pos, BiomeRepaint.DEAD_SCAR.location());
         }
     }

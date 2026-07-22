@@ -91,6 +91,10 @@ public final class SporeBreachServerConfig {
     public static final IntValue AREA_WATER_REPLACEMENT_BLOCKS_PER_PASS;
     public static final IntValue AREA_WATER_RESEED_INTERVAL_TICKS;
     public static final DoubleValue AREA_WATER_RESEED_CHANCE;
+    public static final BooleanValue DEAD_SCAR_DECAY_ENABLED;
+    public static final IntValue DEAD_SCAR_DECAY_INTERVAL_TICKS;
+    public static final IntValue DEAD_SCAR_DECAY_MAX_CONCURRENT_SWEEPS;
+    public static final IntValue DEAD_SCAR_DECAY_BLOCKS_PER_PASS;
 
     public static final BooleanValue MOUND_GENESIS_ENABLED;
     public static final IntValue MOUND_GENESIS_SCAN_INTERVAL_TICKS;
@@ -303,6 +307,21 @@ public final class SporeBreachServerConfig {
                                 .comment(" Chance, checked every areaWaterReseedIntervalTicks per organoid, of rolling a new",
                                         " reseed. Default 0.1.")
                                 .defineInRange("areaWaterReseedChance", 0.1, 0.0, 1.0);
+                        DEAD_SCAR_DECAY_ENABLED = builder
+                                .comment(" Whether infested ground, biomass, and fungal growth left behind in a downgraded",
+                                        " dead scar area slowly rot back to normal in the background. Default true.")
+                                .define("deadScarDecayEnabled", true);
+                        DEAD_SCAR_DECAY_INTERVAL_TICKS = builder
+                                .comment(" How often (in ticks) the dead scar decay backlog is advanced. Default 100 (5s).")
+                                .defineInRange("deadScarDecayIntervalTicks", 100, 20, Integer.MAX_VALUE);
+                        DEAD_SCAR_DECAY_MAX_CONCURRENT_SWEEPS = builder
+                                .comment(" Max dead scar columns force-loaded at once, per dimension, purely to sweep them for",
+                                        " decay. Keeps this feature's extra chunkloading footprint small regardless of how",
+                                        " large the backlog grows. Default 2.")
+                                .defineInRange("deadScarDecayMaxConcurrentSweeps", 2, 1, Integer.MAX_VALUE);
+                        DEAD_SCAR_DECAY_BLOCKS_PER_PASS = builder
+                                .comment(" Max block positions examined per swept column per recheck. Default 64.")
+                                .defineInRange("deadScarDecayBlocksPerPass", 64, 1, Integer.MAX_VALUE);
                 builder.pop();
                 builder.push("structures");
                         STRUCTURE_GROWTH_MODE = builder

@@ -1,0 +1,22 @@
+{
+  "values": [
+    "spore:infested_dirt",
+    "spore:infested_stone",
+    "spore:infested_netherrack",
+    "spore:infested_soul_sand",
+    "spore:infested_end_stone",
+    "spore:infested_sand",
+    "spore:infested_gravel",
+    "spore:infested_deepslate",
+    "spore:infested_red_sand",
+    "spore:infested_clay",
+    "spore:infested_cobblestone",
+    "spore:infested_cobbled_deepslate",
+    "spore:infested_stone_bricks",
+    "spore:infested_bricks",
+    "spore:infested_laboratory_block",
+    "spore:infested_laboratory_block1",
+    "spore:infested_laboratory_block2",
+    "spore:infested_laboratory_block3"
+  ]
+}
