@@ -66,6 +66,10 @@ public final class SporeBreachServerConfig {
     public static final IntValue CORRUPTION_BREAKPOINT_ADAPTATIONS;
     public static final IntValue CORRUPTION_BREAKPOINT_LINKED_SPAWNS;
 
+    public static final BooleanValue CORRUPTION_USE_MAX_FOR_BREAKPOINTS;
+    public static final BooleanValue CORRUPTION_USE_MAX_FOR_RAID_SIZE;
+    public static final BooleanValue CORRUPTION_USE_MAX_FOR_MOB_SCALING;
+
     public static final BooleanValue CORRUPTION_MOB_SCALING_ENABLED;
     public static final DoubleValue CORRUPTION_MOB_HEALTH_MAX_MULTIPLIER;
     public static final DoubleValue CORRUPTION_MOB_DAMAGE_MAX_MULTIPLIER;
@@ -207,6 +211,21 @@ public final class SporeBreachServerConfig {
                         CORRUPTION_BREAKPOINT_LINKED_SPAWNS = builder
                                 .comment(" Corruption value at which all applicable spore mobs spawn as Linked. Default 850.")
                                 .defineInRange("breakpointLinkedSpawns", 850, 0, Integer.MAX_VALUE);
+                        CORRUPTION_USE_MAX_FOR_BREAKPOINTS = builder
+                                .comment(" If true, the six World Corruption breakpoint gates (raids, instant evolution,",
+                                        " calamities/wombs, calamity raids, adaptations, linked spawns) use the highest",
+                                        " corruption a dimension has ever reached instead of its current value, so gates",
+                                        " don't close again after killing organoids. Default false.")
+                                .define("useMaxForBreakpoints", false);
+                        CORRUPTION_USE_MAX_FOR_RAID_SIZE = builder
+                                .comment(" If true, Proto raid group size scaling uses the highest World Corruption a",
+                                        " dimension has ever reached instead of its current value. Default false.")
+                                .define("useMaxForRaidSize", false);
+                        CORRUPTION_USE_MAX_FOR_MOB_SCALING = builder
+                                .comment(" If true, corruption-based spore mob health/damage/armor scaling uses the highest",
+                                        " World Corruption a dimension has ever reached instead of its current value.",
+                                        " Default false.")
+                                .define("useMaxForMobScaling", false);
                         CORRUPTION_MOB_SCALING_ENABLED = builder
                                 .comment(" Toggle for corruption-scaled spore mob health/damage/armor. Default true.")
                                 .define("mobScalingEnabled", true);

@@ -47,7 +47,7 @@ public final class CorruptionGate {
         int baseMax = SporeBreachServerConfig.PROTO_RAID_GROUP_SIZE_MAX.get();
         double maxMultiplier = SporeBreachServerConfig.PROTO_RAID_GROUP_SIZE_MAX_MULTIPLIER.get();
 
-        double fraction = CorruptionTier.fraction(level);
+        double fraction = CorruptionTier.fractionForRaidSize(level);
         double multiplier = 1.0 + (maxMultiplier - 1.0) * fraction;
 
         int scaledMin = (int) Math.round(baseMin * multiplier);

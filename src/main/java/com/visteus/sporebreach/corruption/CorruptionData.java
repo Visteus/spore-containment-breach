@@ -28,6 +28,7 @@ public final class CorruptionData extends PersistedData {
     private static CorruptionData instance;
 
     private final Map<ResourceKey<Level>, Integer> valueByDimension = new HashMap<>();
+    private final Map<ResourceKey<Level>, Integer> maxValueByDimension = new HashMap<>();
 
     private CorruptionData() {
     }
@@ -42,6 +43,10 @@ public final class CorruptionData extends PersistedData {
 
     public static int get(ServerLevel level) {
         return get().valueByDimension.getOrDefault(level.dimension(), 0);
+    }
+
+    public static int getMax(ServerLevel level) {
+        return get().maxValueByDimension.getOrDefault(level.dimension(), 0);
     }
 
     public static void add(ServerLevel level, int amount) {
@@ -63,6 +68,25 @@ public final class CorruptionData extends PersistedData {
         int clamped = Math.max(0, Math.min(cap, value));
         CorruptionData data = get();
         data.valueByDimension.put(level.dimension(), clamped);
+        data.maxValueByDimension.merge(level.dimension(), clamped, Math::max);
+        data.markDirty();
+    }
+
+    /**
+     * Recalibrates the tracked maximum for a dimension down (or up) to match its current live
+     * value, per the {@code reset_max} debug command.
+     */
+    public static void recalibrateMax(ServerLevel level) {
+        CorruptionData data = get();
+        data.maxValueByDimension.put(level.dimension(), get(level));
+        data.markDirty();
+    }
+
+    public static void setMax(ServerLevel level, int value) {
+        int cap = SporeBreachServerConfig.CORRUPTION_CAP.get();
+        int clamped = Math.max(0, Math.min(cap, value));
+        CorruptionData data = get();
+        data.maxValueByDimension.put(level.dimension(), clamped);
         data.markDirty();
     }
 
@@ -83,6 +107,7 @@ public final class CorruptionData extends PersistedData {
             CompoundTag dimensionTag = new CompoundTag();
             dimensionTag.putString("Dimension", entry.getKey().location().toString());
             dimensionTag.putInt("Value", entry.getValue());
+            dimensionTag.putInt("MaxValue", maxValueByDimension.getOrDefault(entry.getKey(), entry.getValue()));
             dimensions.add(dimensionTag);
         }
         tag.put("Dimensions", dimensions);
@@ -92,13 +117,17 @@ public final class CorruptionData extends PersistedData {
     @Override
     protected void load(CompoundTag tag) {
         valueByDimension.clear();
+        maxValueByDimension.clear();
         ListTag dimensions = tag.getList("Dimensions", Tag.TAG_COMPOUND);
         for (int i = 0; i < dimensions.size(); i++) {
             CompoundTag dimensionTag = dimensions.getCompound(i);
             ResourceKey<Level> dimensionKey = ResourceKey.create(
                     Registries.DIMENSION, ResourceLocation.parse(dimensionTag.getString("Dimension"))
             );
-            valueByDimension.put(dimensionKey, dimensionTag.getInt("Value"));
+            int value = dimensionTag.getInt("Value");
+            valueByDimension.put(dimensionKey, value);
+            maxValueByDimension.put(dimensionKey,
+                    dimensionTag.contains("MaxValue") ? dimensionTag.getInt("MaxValue") : value);
         }
     }
 }

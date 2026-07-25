@@ -17,28 +17,49 @@ public final class CorruptionTier {
         return CorruptionData.get(level);
     }
 
-    /**
-     * Raw corruption value as a fraction of the cap - 0.0 at zero corruption, 1.0 at
-     * {@code CORRUPTION_CAP}. Shared basis for anything that scales linearly with corruption
-     * (raid group size, mob stat scaling, etc).
-     */
-    public static double fraction(ServerLevel level) {
+    private static int breakpointValue(ServerLevel level) {
+        return SporeBreachServerConfig.CORRUPTION_USE_MAX_FOR_BREAKPOINTS.get()
+                ? CorruptionData.getMax(level)
+                : CorruptionData.get(level);
+    }
+
+    private static double fractionOf(int rawValue) {
         int cap = SporeBreachServerConfig.CORRUPTION_CAP.get();
-        return cap > 0 ? Math.min(1.0, (double) value(level) / cap) : 0.0;
+        return cap > 0 ? Math.min(1.0, (double) rawValue / cap) : 0.0;
+    }
+
+    /**
+     * Raid group size scaling basis - see {@link SporeBreachServerConfig#CORRUPTION_USE_MAX_FOR_RAID_SIZE}.
+     */
+    public static double fractionForRaidSize(ServerLevel level) {
+        int value = SporeBreachServerConfig.CORRUPTION_USE_MAX_FOR_RAID_SIZE.get()
+                ? CorruptionData.getMax(level)
+                : CorruptionData.get(level);
+        return fractionOf(value);
+    }
+
+    /**
+     * Mob stat scaling basis - see {@link SporeBreachServerConfig#CORRUPTION_USE_MAX_FOR_MOB_SCALING}.
+     */
+    public static double fractionForMobScaling(ServerLevel level) {
+        int value = SporeBreachServerConfig.CORRUPTION_USE_MAX_FOR_MOB_SCALING.get()
+                ? CorruptionData.getMax(level)
+                : CorruptionData.get(level);
+        return fractionOf(value);
     }
 
     /**
      * Stage 1: Proto-Hivemind raids on players.
      */
     public static boolean areRaidsAllowed(ServerLevel level) {
-        return value(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_RAIDS.get();
+        return breakpointValue(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_RAIDS.get();
     }
 
     /**
      * Stage 2: newly spawned Infected may instantly evolve.
      */
     public static boolean isInstantEvolutionAllowed(ServerLevel level) {
-        return value(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_INSTANT_EVOLUTION.get();
+        return breakpointValue(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_INSTANT_EVOLUTION.get();
     }
 
     /**
@@ -46,27 +67,27 @@ public final class CorruptionTier {
      * at least 1 enchantment per piece.
      */
     public static boolean isCalamitySpawningAllowed(ServerLevel level) {
-        return value(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_CALAMITY_WOMB.get();
+        return breakpointValue(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_CALAMITY_WOMB.get();
     }
 
     /**
      * Stage 4: Proto raids may include Calamities.
      */
     public static boolean isCalamityRaidAllowed(ServerLevel level) {
-        return value(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_CALAMITY_RAIDS.get();
+        return breakpointValue(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_CALAMITY_RAIDS.get();
     }
 
     /**
      * Stage 5: spawned Calamities activate their Adaptation.
      */
     public static boolean isAdaptationAllowed(ServerLevel level) {
-        return value(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_ADAPTATIONS.get();
+        return breakpointValue(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_ADAPTATIONS.get();
     }
 
     /**
      * Stage 6: all applicable spore mobs spawn as Linked.
      */
     public static boolean isLinkedSpawnAllowed(ServerLevel level) {
-        return value(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_LINKED_SPAWNS.get();
+        return breakpointValue(level) >= SporeBreachServerConfig.CORRUPTION_BREAKPOINT_LINKED_SPAWNS.get();
     }
 }

@@ -19,9 +19,9 @@ import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 /**
  * Scales health, attack damage, armor, and armor toughness for every combat-capable spore mob
  * ({@link UtilityEntity}) by the dimension's World Corruption fraction ({@link
- * CorruptionTier#fraction(ServerLevel)}) - the same linear-fraction basis {@link
- * com.visteus.sporebreach.spawning.CorruptionGate#getRaidGroupSizeRange} uses for raid group size.
- * Locked in once per entity at join/first-load, mirroring {@link CorruptionEffects}.
+ * CorruptionTier#fractionForMobScaling(ServerLevel)}), a linear-fraction basis analogous to the
+ * one {@link com.visteus.sporebreach.spawning.CorruptionGate#getRaidGroupSizeRange} uses for raid
+ * group size. Locked in once per entity at join/first-load, mirroring {@link CorruptionEffects}.
  */
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
 public final class CorruptionMobStatScaling {
@@ -55,7 +55,7 @@ public final class CorruptionMobStatScaling {
         }
         data.putBoolean(APPLIED_KEY, true);
 
-        double fraction = CorruptionTier.fraction(level);
+        double fraction = CorruptionTier.fractionForMobScaling(level);
         if (fraction <= 0.0) {
             return;
         }

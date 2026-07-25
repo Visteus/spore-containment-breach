@@ -3,6 +3,7 @@ package com.visteus.sporebreach.corruption;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.visteus.sporebreach.SporeContainmentBreach;
+import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -13,10 +14,11 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
  * {@code /sporebreach:corruption_debug} - reports the executor's dimension's
- * current World Corruption value and which of the six gates are open, mirroring {@link
- * com.visteus.sporebreach.chunkloading.ChunkloadDebugCommand}'s precedent. Also exposes {@code
- * set}/{@code add} subcommands (both requiring permission level 2, same as the root) for jumping
- * straight to or across a breakpoint while tuning the config defaults.
+ * current World Corruption value, tracked max, and which of the six gates are open, mirroring
+ * {@link com.visteus.sporebreach.chunkloading.ChunkloadDebugCommand}'s precedent. Also exposes
+ * {@code set}/{@code add}/{@code reset_max}/{@code set_max} subcommands (all requiring permission
+ * level 2, same as the root) for jumping straight to or across a breakpoint while tuning the
+ * config defaults.
  */
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
 public final class CorruptionDebugCommand {
@@ -42,6 +44,17 @@ public final class CorruptionDebugCommand {
                                         .then(
                                                 Commands.argument("amount", IntegerArgumentType.integer())
                                                         .executes(CorruptionDebugCommand::runAdd)
+                                        )
+                        )
+                        .then(
+                                Commands.literal("reset_max")
+                                        .executes(CorruptionDebugCommand::runResetMax)
+                        )
+                        .then(
+                                Commands.literal("set_max")
+                                        .then(
+                                                Commands.argument("value", IntegerArgumentType.integer(0))
+                                                        .executes(CorruptionDebugCommand::runSetMax)
                                         )
                         )
         );
@@ -72,11 +85,28 @@ public final class CorruptionDebugCommand {
         return CorruptionData.get(level);
     }
 
+    private static int runResetMax(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        CorruptionData.recalibrateMax(level);
+        report(context.getSource(), level);
+        return CorruptionData.getMax(level);
+    }
+
+    private static int runSetMax(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        CorruptionData.setMax(level, IntegerArgumentType.getInteger(context, "value"));
+        report(context.getSource(), level);
+        return CorruptionData.getMax(level);
+    }
+
     private static void report(CommandSourceStack source, ServerLevel level) {
         int value = CorruptionData.get(level);
+        int maxValue = CorruptionData.getMax(level);
         source.sendSuccess(() -> Component.literal(
                 "sporebreach World Corruption in " + level.dimension().location() + ": " + value
+                        + " (max reached: " + maxValue + ")"
         ), false);
+        source.sendSuccess(() -> Component.literal("  Using max reached for: " + usingMaxFor()), false);
         source.sendSuccess(() -> Component.literal(
                 "  Stage 1 (raids allowed): " + CorruptionTier.areRaidsAllowed(level)
         ), false);
@@ -95,5 +125,19 @@ public final class CorruptionDebugCommand {
         source.sendSuccess(() -> Component.literal(
                 "  Stage 6 (linked spawns): " + CorruptionTier.isLinkedSpawnAllowed(level)
         ), false);
+    }
+
+    private static String usingMaxFor() {
+        StringBuilder builder = new StringBuilder();
+        if (SporeBreachServerConfig.CORRUPTION_USE_MAX_FOR_BREAKPOINTS.get()) {
+            builder.append("breakpoints ");
+        }
+        if (SporeBreachServerConfig.CORRUPTION_USE_MAX_FOR_RAID_SIZE.get()) {
+            builder.append("raidSize ");
+        }
+        if (SporeBreachServerConfig.CORRUPTION_USE_MAX_FOR_MOB_SCALING.get()) {
+            builder.append("mobScaling ");
+        }
+        return builder.length() == 0 ? "none" : builder.toString().strip();
     }
 }
