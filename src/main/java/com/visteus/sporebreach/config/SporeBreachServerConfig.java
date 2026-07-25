@@ -111,6 +111,7 @@ public final class SporeBreachServerConfig {
 
     public static final EnumValue<StructureGrowthMode> STRUCTURE_GROWTH_MODE;
     public static final DoubleValue STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE;
+    public static final ConfigValue<List<? extends String>> STRUCTURE_GROWTH_REPLACEABLE_BLOCKS;
 
     public static final IntValue MOUND_STRUCTURE_RECHECK_INTERVAL_TICKS;
     public static final IntValue MOUND_STRUCTURE_PASS_INTERVAL_TICKS;
@@ -334,6 +335,30 @@ public final class SporeBreachServerConfig {
                                 .comment(" Minimum fraction of an underground structure's blocks that must currently sit in",
                                         " natural terrain for it to be allowed to grow. Default 0.25.")
                                 .defineInRange("undergroundNaturalGroundCoverage", 0.25, 0.0, 1.0);
+                        STRUCTURE_GROWTH_REPLACEABLE_BLOCKS = builder
+                                .comment(" Blocks and tags Mound/Proto-Hivemind structure growth is allowed to overwrite.",
+                                        " Everything else is built around instead of destroyed.",
+                                        " Each entry is either \"#namespace:path\" (a block tag) or \"namespace:path\" (a single block id).",
+                                        " Leave this list empty to let structure growth overwrite any block."
+                                )
+                                .defineListAllowEmpty(
+                                        "replaceableBlocks",
+                                        () -> Lists.newArrayList(
+                                                "#sporebreach:natural_ground",
+                                                "#sporebreach:bile",
+                                                "#sporebreach:biomass",
+                                                "#sporebreach:frozen",
+                                                "#sporebreach:fungal_growth",
+                                                "#sporebreach:infested",
+                                                "minecraft:water",
+                                                "minecraft:lava",
+                                                "#minecraft:leaves",
+                                                "#minecraft:logs",
+                                                "#minecraft:planks"
+                                        ),
+                                        () -> "#namespace:tag_path or namespace:block_id",
+                                        o -> o instanceof String
+                                );
                 builder.pop();
 
         builder.pop();

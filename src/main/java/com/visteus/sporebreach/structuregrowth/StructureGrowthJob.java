@@ -1,5 +1,6 @@
 package com.visteus.sporebreach.structuregrowth;
 
+import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,6 +66,8 @@ public final class StructureGrowthJob {
      * or a solid structure that still leaves the organoid room to stand - simply never displace it.
      */
     public void advance(ServerLevel level, Mob organoid, RandomSource random, int blockBudget) {
+        ReplaceableBlockSet replaceable = ReplaceableBlockSet.fromConfig(SporeBreachServerConfig.STRUCTURE_GROWTH_REPLACEABLE_BLOCKS.get());
+
         int placedThisPass = 0;
         while (placedThisPass < blockBudget && !frontier.isEmpty()) {
             int index = random.nextInt(frontier.size());
@@ -79,14 +82,16 @@ public final class StructureGrowthJob {
             }
 
             boolean mightSuffocate = organoid != null && organoid.isAlive() && organoid.getBoundingBox().intersects(new AABB(pos));
+            boolean canReplace = replaceable.canReplace(level.getBlockState(pos));
 
-            level.setBlock(pos, info.state(), 3);
+            if (canReplace) {
+                level.setBlock(pos, info.state(), 3);
+                if (mightSuffocate) {
+                    rescueFromSuffocation(level, organoid, pos);
+                }
+            }
             placed.add(pos);
             placedThisPass++;
-
-            if (mightSuffocate) {
-                rescueFromSuffocation(level, organoid, pos);
-            }
 
             for (Direction direction : Direction.values()) {
                 BlockPos neighbor = pos.relative(direction);
