@@ -49,7 +49,14 @@ public final class ProtoRaidDirector {
 
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String COOLDOWN_KEY = "sporebreach_raid_cd";
-    private static final String RAID_BY_KEY = "sporebreach_raid_by";
+
+    /**
+     * Also read by {@link com.visteus.sporebreach.mixin.VanguardMixin} to decide whether a
+     * Vanguard calling in backup is one of our raiders, and if so which raid/Proto to tag the
+     * reinforcement with.
+     */
+    public static final String RAID_BY_KEY = "sporebreach_raid_by";
+    public static final String RAID_ID_KEY = "sporebreach_raid_id";
     private static final int MAX_PICK_ATTEMPTS = 5;
 
     private ProtoRaidDirector() {
@@ -105,6 +112,7 @@ public final class ProtoRaidDirector {
         int max = Math.max(groupSize.min(), groupSize.max());
         int count = min + proto.getRandom().nextInt(max - min + 1);
 
+        UUID raidId = UUID.randomUUID();
         List<UUID> raiderIds = new ArrayList<>();
         Map<EntityType<?>, Integer> perTypeCounts = new HashMap<>();
         for (int i = 0; i < count; i++) {
@@ -121,7 +129,7 @@ public final class ProtoRaidDirector {
             }
             SpawnPoolEntry entry = picked.get();
             boolean allowCalamityHere = pool == calamities;
-            spawnRaider(level, proto, entry, targetPos, searchRadius, allowCalamityHere).ifPresent(id -> {
+            spawnRaider(level, proto, raidId, entry, targetPos, searchRadius, allowCalamityHere).ifPresent(id -> {
                 raiderIds.add(id);
                 perTypeCounts.merge(entry.type(), 1, Integer::sum);
             });
@@ -131,7 +139,7 @@ public final class ProtoRaidDirector {
             LOGGER.debug("sporebreach: Proto raid at {} found a target but placed no raiders", targetPos);
         } else {
             RaidRegistry.register(
-                    level, new RaidRegistry.RaidRecord(UUID.randomUUID(), proto.getUUID(), targetPos, level.getGameTime(), raiderIds)
+                    level, new RaidRegistry.RaidRecord(raidId, proto.getUUID(), targetPos, level.getGameTime(), raiderIds)
             );
             LOGGER.info(
                     "sporebreach: Proto {} at {} dispatched a raid of {} ({}) targeting {}",
@@ -233,7 +241,7 @@ public final class ProtoRaidDirector {
     }
 
     private static Optional<UUID> spawnRaider(
-            ServerLevel level, Proto proto, SpawnPoolEntry entry, BlockPos target, int searchRadius, boolean calamityAllowedHere
+            ServerLevel level, Proto proto, UUID raidId, SpawnPoolEntry entry, BlockPos target, int searchRadius, boolean calamityAllowedHere
     ) {
         Optional<BlockPos> position = SpawnAnchors.findGroundPosition(level, target, searchRadius, proto.getRandom());
         if (position.isEmpty()) {
@@ -260,6 +268,7 @@ public final class ProtoRaidDirector {
         RandomSource random = proto.getRandom();
         spawned.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, random.nextFloat() * 360.0F, 0.0F);
         spawned.getPersistentData().putUUID(RAID_BY_KEY, proto.getUUID());
+        spawned.getPersistentData().putUUID(RAID_ID_KEY, raidId);
         if (!level.addFreshEntity(spawned)) {
             return Optional.empty();
         }

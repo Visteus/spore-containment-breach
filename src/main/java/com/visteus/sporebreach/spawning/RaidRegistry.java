@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -11,13 +12,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
 /**
- * Memory-only, per-level record of raids dispatched by {@link ProtoRaidDirector} - purely for
- * observability via {@link RaidDebugCommand}; nothing else in the mod reads this. One entry per
+ * Memory-only, per-level record of raids dispatched by {@link ProtoRaidDirector}. One entry per
  * raid attempt that actually placed at least one raider: which Proto sent it, its target, when
  * it was dispatched, and the UUIDs of every raider it spawned (which thins out over time as
- * raiders die - see {@link #livingMembers}). Not persisted, same acceptable-loss tradeoff as
- * {@link RaidTravelTracker} - losing this on restart only affects debug reporting, never
- * gameplay.
+ * raiders die - see {@link #livingMembers}, and grows if a Vanguard calls in backup - see {@link
+ * com.visteus.sporebreach.mixin.VanguardMixin}). Originally purely for observability via {@link
+ * RaidDebugCommand}, {@link RaidReturnDirector} now also reads it to drive raiders back to their
+ * Proto after they've engaged for a while. Not persisted, same acceptable-loss tradeoff as {@link
+ * RaidTravelTracker} - losing this on restart means in-flight raiders just never return home
+ * (they fall back to normal despawn handling), never a hard crash or invalid state.
  */
 public final class RaidRegistry {
 
@@ -36,6 +39,24 @@ public final class RaidRegistry {
     public static List<RaidRecord> snapshot(ServerLevel level) {
         List<RaidRecord> raids = RAIDS_BY_LEVEL.get(level.dimension());
         return raids != null ? List.copyOf(raids) : List.of();
+    }
+
+    /**
+     * Finds the active record for a specific raid, so {@link
+     * com.visteus.sporebreach.mixin.VanguardMixin} can append a Vanguard's called-in backup to
+     * the right raid's roster even if the same Proto has more than one raid in flight at once.
+     */
+    public static Optional<RaidRecord> findByRaidId(ServerLevel level, UUID raidId) {
+        List<RaidRecord> raids = RAIDS_BY_LEVEL.get(level.dimension());
+        if (raids == null) {
+            return Optional.empty();
+        }
+        for (RaidRecord record : raids) {
+            if (record.raidId().equals(raidId)) {
+                return Optional.of(record);
+            }
+        }
+        return Optional.empty();
     }
 
     /**

@@ -44,6 +44,10 @@ public final class SporeBreachServerConfig {
     public static final BooleanValue PROTO_RAID_DIRECTED_TRAVEL;
     public static final IntValue PROTO_RAID_TRAVEL_MAX_DURATION_TICKS;
     public static final IntValue PROTO_RAID_TRAVEL_SWEEP_INTERVAL_TICKS;
+    public static final BooleanValue ENABLE_PROTO_RAID_RETURN;
+    public static final IntValue PROTO_RAID_ENGAGEMENT_TICKS;
+    public static final IntValue PROTO_RAID_RETURN_MAX_DURATION_TICKS;
+    public static final IntValue PROTO_RAID_RETURN_BASE_BIOMASS;
     public static final IntValue PROTO_AGE_UP_INTERVAL_TICKS;
     public static final IntValue PROTO_MAX_AGE;
 
@@ -615,6 +619,22 @@ public final class SporeBreachServerConfig {
                                 PROTO_RAID_TRAVEL_SWEEP_INTERVAL_TICKS = builder
                                         .comment(" How often (in ticks) traveling raiders are checked for timeout. Default 3000 (2.5 min).")
                                         .defineInRange("protoRaidTravelSweepIntervalTicks", 3000, 20, Integer.MAX_VALUE);
+                                ENABLE_PROTO_RAID_RETURN = builder
+                                        .comment(" Whether raid survivors (and any backup a Vanguard calls in) walk back to their",
+                                                " Proto-Hivemind after fighting for a while, turning into biomass on arrival. Default true.")
+                                        .define("enableProtoRaidReturn", true);
+                                PROTO_RAID_ENGAGEMENT_TICKS = builder
+                                        .comment(" How long a raider stays at the raid location, after arriving there, before heading",
+                                                " home. Travel time to the target doesn't count against this. Default 6000 (5 min).")
+                                        .defineInRange("protoRaidEngagementTicks", 6000, 0, Integer.MAX_VALUE);
+                                PROTO_RAID_RETURN_MAX_DURATION_TICKS = builder
+                                        .comment(" Max time a returning raider keeps forced chunkloading before it's abandoned, even if",
+                                                " it never makes it home. Default 18000 (15 min).")
+                                        .defineInRange("protoRaidReturnMaxDurationTicks", 18000, 20, Integer.MAX_VALUE);
+                                PROTO_RAID_RETURN_BASE_BIOMASS = builder
+                                        .comment(" Flat biomass every surviving raider brings home on arrival, in addition to any kills",
+                                                " it racked up while raiding. Default 3.")
+                                        .defineInRange("protoRaidReturnBaseBiomass", 3, 0, Integer.MAX_VALUE);
                                 builder.pop();
 
                         builder.push("wombs");

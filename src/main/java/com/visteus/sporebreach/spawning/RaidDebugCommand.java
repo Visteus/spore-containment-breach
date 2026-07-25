@@ -2,6 +2,7 @@ package com.visteus.sporebreach.spawning;
 
 import com.mojang.brigadier.context.CommandContext;
 import com.visteus.sporebreach.SporeContainmentBreach;
+import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.commands.CommandSourceStack;
@@ -94,6 +95,23 @@ public final class RaidDebugCommand {
                 "    Current location (sampled member " + memberType + "): "
                         + memberPos.getX() + ", " + memberPos.getY() + ", " + memberPos.getZ()
         ), false);
+        String phase = phaseOf(level, sampledId);
+        source.sendSuccess(() -> Component.literal("    Sampled member phase: " + phase), false);
+    }
+
+    /**
+     * Reports the same not-yet-arrived/engaging/returning state {@link RaidReturnDirector} tracks
+     * for this raider, without duplicating its persisted state - purely a readback of {@link
+     * RaidEngagementTracker}.
+     */
+    private static String phaseOf(ServerLevel level, UUID raiderId) {
+        Long arrivalTime = RaidEngagementTracker.arrivalGameTime(level, raiderId);
+        if (arrivalTime == null) {
+            return "traveling to target";
+        }
+        long ticksSinceArrival = level.getGameTime() - arrivalTime;
+        int engagementTicks = SporeBreachServerConfig.PROTO_RAID_ENGAGEMENT_TICKS.get();
+        return ticksSinceArrival < engagementTicks ? "engaging" : "returning";
     }
 
     private static String shortId(UUID id) {

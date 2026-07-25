@@ -4,9 +4,12 @@
   "package": "com.visteus.sporebreach.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "DespawnSystemMixin",
+    "MobMixin",
     "MoundStructureMixin",
     "ProtoMixin",
     "ScamperMixin",
-    "StructureTemplateAccessor"
+    "StructureTemplateAccessor",
+    "VanguardMixin"
   ]
 }
