@@ -37,7 +37,7 @@
       { "type": "spore:lacerator", "weight": 20, "minCount": 1, "maxCount": 3 },
       { "type": "spore:plagued", "weight": 10, "minCount": 1, "maxCount": 2 },
       { "type": "spore:biobloob", "weight": 10, "minCount": 1, "maxCount": 2 },
-      { "type": "spore:saugling", "weight": 10, "minCount": 1, "maxCount": 2 },
+      { "type": "spore:saugling", "weight": 10, "minCount": 1, "maxCount": 2 }
     ]
   },
   "spawn_costs": {},
