@@ -9,6 +9,8 @@ import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import com.visteus.sporebreach.structuregrowth.OrganoidStructurePlacer;
 import com.visteus.sporebreach.tracking.OrganoidRegistry;
 import com.visteus.sporebreach.tracking.ProtoAgeTracker;
+import com.visteus.sporebreach.util.JitteredTimer;
+import com.visteus.sporebreach.util.TimerJitter;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -34,7 +36,7 @@ public final class ProtoOutpostSeedDirector {
     private static final String COOLDOWN_KEY = "sporebreach_outpost_seed_cd";
     private static final int MAX_SITE_ATTEMPTS = 20;
 
-    private static long tickCounter;
+    private static final JitteredTimer TIMER = new JitteredTimer();
 
     private ProtoOutpostSeedDirector() {
     }
@@ -47,9 +49,8 @@ public final class ProtoOutpostSeedDirector {
         if (!SporeBreachServerConfig.PROTO_OUTPOST_SEED_ENABLED.get()) {
             return;
         }
-        tickCounter++;
         int interval = SporeBreachServerConfig.DIRECTOR_TICK_INTERVAL_TICKS.get();
-        if (interval <= 0 || tickCounter % interval != 0) {
+        if (!TIMER.tick(interval)) {
             return;
         }
 
@@ -81,7 +82,9 @@ public final class ProtoOutpostSeedDirector {
         // Reroll unconditionally so a Proto with no valid site this cycle doesn't retry every
         // director tick - only on its next scheduled roll.
         int cooldownTicks = SporeBreachServerConfig.PROTO_OUTPOST_SEED_COOLDOWN_TICKS.get();
-        proto.getPersistentData().putLong(COOLDOWN_KEY, level.getGameTime() + cooldownTicks);
+        proto.getPersistentData().putLong(
+                COOLDOWN_KEY, TimerJitter.dueAt(proto.getRandom(), level.getGameTime(), cooldownTicks)
+        );
 
         Optional<BlockPos> site = pickOutpostSite(level, proto);
         if (site.isEmpty()) {

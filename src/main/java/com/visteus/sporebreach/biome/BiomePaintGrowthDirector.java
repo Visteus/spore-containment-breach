@@ -2,6 +2,7 @@ package com.visteus.sporebreach.biome;
 
 import com.visteus.sporebreach.SporeContainmentBreach;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
+import com.visteus.sporebreach.util.JitteredTimer;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -18,8 +19,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
 public final class BiomePaintGrowthDirector {
 
-    private static long paintCounter;
-    private static long reseedCounter;
+    private static final JitteredTimer PAINT_TIMER = new JitteredTimer();
+    private static final JitteredTimer RESEED_TIMER = new JitteredTimer();
 
     private BiomePaintGrowthDirector() {
     }
@@ -33,11 +34,8 @@ public final class BiomePaintGrowthDirector {
             return;
         }
 
-        paintCounter++;
-        reseedCounter++;
-
-        boolean paintDue = due(paintCounter, SporeBreachServerConfig.BIOME_PAINT_RECHECK_INTERVAL_TICKS.get());
-        boolean reseedDue = due(reseedCounter, SporeBreachServerConfig.AREA_WATER_RESEED_INTERVAL_TICKS.get());
+        boolean paintDue = PAINT_TIMER.tick(SporeBreachServerConfig.BIOME_PAINT_RECHECK_INTERVAL_TICKS.get());
+        boolean reseedDue = RESEED_TIMER.tick(SporeBreachServerConfig.AREA_WATER_RESEED_INTERVAL_TICKS.get());
         if (!paintDue && !reseedDue) {
             return;
         }
@@ -53,9 +51,5 @@ public final class BiomePaintGrowthDirector {
                 BiomePaintManager.tryReseedWater(level);
             }
         }
-    }
-
-    private static boolean due(long counter, int interval) {
-        return interval > 0 && counter % interval == 0;
     }
 }

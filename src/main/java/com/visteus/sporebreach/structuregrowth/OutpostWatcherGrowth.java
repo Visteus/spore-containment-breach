@@ -86,7 +86,7 @@ public final class OutpostWatcherGrowth {
         }
 
         RandomSource random = organoid.getRandom();
-        if (!force && random.nextDouble() >= SporeBreachServerConfig.OUTPOST_WATCHER_PLACEMENT_CHANCE.get()) {
+        if (!force && random.nextDouble() >= SporeBreachServerConfig.GROWTH_PLACEMENT_CHANCE.get()) {
             return Result.ROLL_FAILED;
         }
 

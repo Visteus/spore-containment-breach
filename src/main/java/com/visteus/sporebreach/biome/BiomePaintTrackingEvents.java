@@ -8,6 +8,7 @@ import com.visteus.sporebreach.chunkloading.ChunkloadData;
 import com.visteus.sporebreach.chunkloading.ChunkloadOwnerId;
 import com.visteus.sporebreach.chunkloading.ChunkloadState;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
+import com.visteus.sporebreach.util.TimerJitter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
@@ -57,11 +58,14 @@ public final class BiomePaintTrackingEvents {
         }
 
         long now = level.getGameTime();
-        long scarDelayTicks = SporeBreachServerConfig.BIOME_PAINT_SCAR_DELAY_TICKS.get();
+        int scarDelayTicks = SporeBreachServerConfig.BIOME_PAINT_SCAR_DELAY_TICKS.get();
         ChunkPos anchor = chunkloadState.anchorChunk();
         for (ChunkCircleOffsets.ChunkOffset offset : ChunkCircleOffsets.fullOffsets(radius)) {
             ChunkPos pos = new ChunkPos(anchor.x + offset.dx(), anchor.z + offset.dz());
-            BiomePaintData.unclaim(level, pos, entity.getUUID(), now, scarDelayTicks);
+            // Jittered per column, not once for the whole boundary - otherwise every column this
+            // organoid owned would still downgrade on the exact same tick.
+            long jitteredDelay = TimerJitter.roll(level.getRandom(), scarDelayTicks);
+            BiomePaintData.unclaim(level, pos, entity.getUUID(), now, jitteredDelay);
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.visteus.sporebreach.persistence;
 
 import com.visteus.sporebreach.SporeContainmentBreach;
+import com.visteus.sporebreach.util.JitteredTimer;
 import java.util.ArrayList;
 import java.util.List;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -21,7 +22,7 @@ public final class PersistedDataManager {
 
     private static final List<PersistedData> INSTANCES = new ArrayList<>();
 
-    private static long tickCounter;
+    private static final JitteredTimer TIMER = new JitteredTimer();
 
     private PersistedDataManager() {
     }
@@ -32,8 +33,7 @@ public final class PersistedDataManager {
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
-        tickCounter++;
-        if (tickCounter % AUTOSAVE_INTERVAL_TICKS == 0) {
+        if (TIMER.tick(AUTOSAVE_INTERVAL_TICKS)) {
             saveAll();
         }
     }

@@ -5,6 +5,7 @@ import com.Harbinger.Spore.Sentities.Organoids.Mound;
 import com.Harbinger.Spore.Sentities.Organoids.Womb;
 import com.mojang.logging.LogUtils;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
+import com.visteus.sporebreach.util.TimerJitter;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -52,7 +53,9 @@ public final class MoundDefenseSpawner {
         }
 
         int cooldownTicks = SporeBreachServerConfig.MOUND_DEFENDER_COOLDOWN_TICKS.get();
-        mound.getPersistentData().putLong(COOLDOWN_KEY, level.getGameTime() + cooldownTicks);
+        mound.getPersistentData().putLong(
+                COOLDOWN_KEY, TimerJitter.dueAt(mound.getRandom(), level.getGameTime(), cooldownTicks)
+        );
 
         int searchRadius = SporeBreachServerConfig.MOUND_DEFENDER_SEARCH_RADIUS.get();
         int maxNearby = SporeBreachServerConfig.MOUND_MAX_DEFENDERS_NEARBY.get();

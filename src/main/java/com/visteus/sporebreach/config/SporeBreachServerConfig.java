@@ -25,6 +25,14 @@ public final class SporeBreachServerConfig {
 
     public static final IntValue PROTECTED_SPAWN_RADIUS_CHUNKS;
 
+    public static final IntValue TIMER_JITTER_PERCENT;
+
+    public static final IntValue GROWTH_SWEEP_INTERVAL_TICKS;
+    public static final DoubleValue GROWTH_PLACEMENT_CHANCE;
+    public static final IntValue MOUND_STRUCTURE_BLOCKS_PER_SWEEP;
+    public static final IntValue PROTO_STRUCTURE_BLOCKS_PER_SWEEP;
+    public static final IntValue WATCHER_BLOCKS_PER_SWEEP;
+
     public static final IntValue DIRECTOR_TICK_INTERVAL_TICKS;
     public static final IntValue DIRECTOR_BUDGET_PER_CYCLE;
 
@@ -123,7 +131,6 @@ public final class SporeBreachServerConfig {
     public static final BooleanValue OUTPOST_WATCHER_ENABLED;
     public static final IntValue OUTPOST_WATCHER_RECHECK_INTERVAL_TICKS;
     public static final IntValue OUTPOST_WATCHER_PASS_INTERVAL_TICKS;
-    public static final DoubleValue OUTPOST_WATCHER_PLACEMENT_CHANCE;
     public static final IntValue OUTPOST_WATCHER_MIN_AGE;
     public static final IntValue OUTPOST_WATCHER_MAX_PER_ORGANOID;
     public static final IntValue OUTPOST_WATCHER_MIN_DISTANCE_BETWEEN;
@@ -136,7 +143,6 @@ public final class SporeBreachServerConfig {
     public static final IntValue MOUND_STRUCTURE_PASS_INTERVAL_TICKS;
     public static final IntValue MOUND_STRUCTURE_MIN_AGE;
     public static final IntValue MOUND_STRUCTURE_MAX_PER_MOUND;
-    public static final DoubleValue MOUND_STRUCTURE_PLACEMENT_CHANCE;
     public static final IntValue MOUND_STRUCTURE_MIN_DISTANCE;
     public static final IntValue MOUND_STRUCTURE_BLOCKS_PER_PASS;
     public static final ConfigValue<List<? extends String>> MOUND_STRUCTURE_POOL;
@@ -147,7 +153,6 @@ public final class SporeBreachServerConfig {
     public static final IntValue PROTO_STRUCTURE_PASS_INTERVAL_TICKS;
     public static final IntValue PROTO_STRUCTURE_MIN_AGE;
     public static final IntValue PROTO_STRUCTURE_MAX_PER_PROTO;
-    public static final DoubleValue PROTO_STRUCTURE_PLACEMENT_CHANCE;
     public static final IntValue PROTO_STRUCTURE_MIN_DISTANCE;
     public static final IntValue PROTO_STRUCTURE_BIOMASS_COST_PER_PASS;
     public static final IntValue PROTO_STRUCTURE_BLOCKS_PER_PASS;
@@ -173,6 +178,41 @@ public final class SporeBreachServerConfig {
                                 .comment(" No spore structures will spawn within this many chunks of world spawn.",
                                         " Set to 0 to disable. Default 3.")
                                 .defineInRange("protectedSpawnRadiusChunks", 3, 0, 64);
+                builder.pop();
+
+                builder.push("timing");
+                        TIMER_JITTER_PERCENT = builder
+                                .comment(" Randomizes how long timers wait, by plus or minus this percent, each time they fire.",
+                                        " Keeps Mounds and Proto-Hiveminds from all acting on the same tick and causing lag spikes.",
+                                        " Set to 0 to make all timers fire at exactly their configured interval. Default 10.")
+                                .defineInRange("timerJitterPercent", 10, 0, 50);
+                builder.pop();
+
+                builder.push("growth");
+                        GROWTH_SWEEP_INTERVAL_TICKS = builder
+                                .comment(" How often (in ticks) structure and Outpost Watcher growth work is handed out.",
+                                        " Lower values spread the work more smoothly; this must stay well below the",
+                                        " per-structure building pass intervals below or no spreading happens at all.",
+                                        " Default 20 (1s).")
+                                .defineInRange("sweepIntervalTicks", 20, 1, 200);
+                        GROWTH_PLACEMENT_CHANCE = builder
+                                .comment(" Chance, checked every recheckIntervalTicks, that a Mound or Proto-Hivemind starts",
+                                        " growing its next structure or Outpost Watcher tower. Shared by all three growth",
+                                        " systems below. Default 0.1.")
+                                .defineInRange("placementChance", 0.1, 0.0, 1.0);
+                        MOUND_STRUCTURE_BLOCKS_PER_SWEEP = builder
+                                .comment(" Max blocks all Mounds together may place on their own structures per sweep.",
+                                        " Default 64.")
+                                .defineInRange("moundStructureBlocksPerSweep", 64, 1, Integer.MAX_VALUE);
+                        PROTO_STRUCTURE_BLOCKS_PER_SWEEP = builder
+                                .comment(" Max blocks all Proto-Hiveminds together may place on their own structures per",
+                                        " sweep. Default 128.")
+                                .defineInRange("protoStructureBlocksPerSweep", 128, 1, Integer.MAX_VALUE);
+                        WATCHER_BLOCKS_PER_SWEEP = builder
+                                .comment(" Max blocks all Mounds and Proto-Hiveminds together may place on Outpost Watchers",
+                                        " per sweep. Shared between both organoid types, matching how every other Outpost",
+                                        " Watcher setting already works. Default 192.")
+                                .defineInRange("watcherBlocksPerSweep", 192, 1, Integer.MAX_VALUE);
                 builder.pop();
 
                 builder.push("director");
@@ -405,12 +445,8 @@ public final class SporeBreachServerConfig {
                                         .defineInRange("recheckIntervalTicks", 6000, 20, Integer.MAX_VALUE);
                                 OUTPOST_WATCHER_PASS_INTERVAL_TICKS = builder
                                         .comment(" How often (in ticks) an in-progress Outpost Watcher tower is advanced by one building pass. ",
-                                                " Default 40 (2s).")
-                                        .defineInRange("passIntervalTicks", 40, 20, Integer.MAX_VALUE);
-                                OUTPOST_WATCHER_PLACEMENT_CHANCE = builder
-                                        .comment(" Chance, checked every recheckIntervalTicks, that an organoid starts a new Outpost Watcher tower. ",
-                                                " Default 0.1.")
-                                        .defineInRange("placementChance", 0.1, 0.0, 1.0);
+                                                " Default 100 (5s).")
+                                        .defineInRange("passIntervalTicks", 100, 20, Integer.MAX_VALUE);
                                 OUTPOST_WATCHER_MIN_AGE = builder
                                         .comment(" Minimum age before a Mound or Proto-Hivemind starts rolling for Outpost Watchers.",
                                                 " Default 1.")
@@ -429,8 +465,8 @@ public final class SporeBreachServerConfig {
                                         .defineInRange("minClearanceFromStructures", 1, 0, Integer.MAX_VALUE);
                                 OUTPOST_WATCHER_BLOCKS_PER_PASS = builder
                                         .comment(" Max blocks placed per building pass.",
-                                                "  Default 20.")
-                                        .defineInRange("blocksPerPass", 20, 1, Integer.MAX_VALUE);
+                                                "  Default 50.")
+                                        .defineInRange("blocksPerPass", 50, 1, Integer.MAX_VALUE);
                                 OUTPOST_WATCHER_SUPPRESS_BASE_TOWERS = builder
                                         .comment(" Whether to stop Reconstructed Minds from dropping their own instant Outpost",
                                                 " Watcher tower when they mature too close to a Proto-Hivemind, leaving this",
@@ -537,10 +573,6 @@ public final class SporeBreachServerConfig {
                                 MOUND_STRUCTURE_MAX_PER_MOUND = builder
                                         .comment(" Max structures a single Mound will grow around itself. Default 3.")
                                         .defineInRange("maxPerMound", 3, 0, Integer.MAX_VALUE);
-                                MOUND_STRUCTURE_PLACEMENT_CHANCE = builder
-                                        .comment(" Chance, checked every recheckIntervalTicks, that a Mound starts growing its next",
-                                                " structure. Default 0.1.")
-                                        .defineInRange("placementChance", 0.1, 0.0, 1.0);
                                 MOUND_STRUCTURE_MIN_DISTANCE = builder
                                         .comment(" Minimum distance (blocks) between a Mound's 2nd+ grown structure and its earlier",
                                                 " ones. The first structure is always centered on the Mound itself. Default 12.")
@@ -737,18 +769,14 @@ public final class SporeBreachServerConfig {
                                         .defineInRange("recheckIntervalTicks", 6000, 20, Integer.MAX_VALUE);
                                 PROTO_STRUCTURE_PASS_INTERVAL_TICKS = builder
                                         .comment(" How often (in ticks) an in-progress structure growth job is advanced by one",
-                                                " building pass. Default 40 (2s).")
-                                        .defineInRange("passIntervalTicks", 40, 20, Integer.MAX_VALUE);
+                                                " building pass. Default 100 (5s).")
+                                        .defineInRange("passIntervalTicks", 100, 20, Integer.MAX_VALUE);
                                 PROTO_STRUCTURE_MIN_AGE = builder
                                         .comment(" Minimum Proto-Hivemind age before it can start growing structures. Default 1.")
                                         .defineInRange("minAge", 1, 0, Integer.MAX_VALUE);
                                 PROTO_STRUCTURE_MAX_PER_PROTO = builder
                                         .comment(" Max structures a single Proto-Hivemind will grow around itself. Default 5.")
                                         .defineInRange("maxPerProto", 5, 1, Integer.MAX_VALUE);
-                                PROTO_STRUCTURE_PLACEMENT_CHANCE = builder
-                                        .comment(" Chance, checked every recheckIntervalTicks, that a Proto-Hivemind starts growing",
-                                                " its next structure. Default 0.1.")
-                                        .defineInRange("placementChance", 0.1, 0.0, 1.0);
                                 PROTO_STRUCTURE_MIN_DISTANCE = builder
                                         .comment(" Minimum distance (blocks) between a Proto-Hivemind's 2nd+ grown structure and its",
                                                 " earlier ones. The first structure is always centered on the Proto-Hivemind itself.",
@@ -759,8 +787,8 @@ public final class SporeBreachServerConfig {
                                                 " shell growth spends. A pass is skipped if biomass is too low. Default 8.")
                                         .defineInRange("biomassCostPerPass", 8, 0, Integer.MAX_VALUE);
                                 PROTO_STRUCTURE_BLOCKS_PER_PASS = builder
-                                        .comment(" Max blocks placed per building pass. Default 80.")
-                                        .defineInRange("blocksPerPass", 80, 1, Integer.MAX_VALUE);
+                                        .comment(" Max blocks placed per building pass. Default 200.")
+                                        .defineInRange("blocksPerPass", 200, 1, Integer.MAX_VALUE);
                                 PROTO_STRUCTURE_POOL = builder
                                         .comment(" Structures a Proto-Hivemind may grow around itself. Format: \"structureId|weight\".")
                                         .defineListAllowEmpty(

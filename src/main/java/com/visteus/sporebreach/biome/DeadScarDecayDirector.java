@@ -2,6 +2,7 @@ package com.visteus.sporebreach.biome;
 
 import com.visteus.sporebreach.SporeContainmentBreach;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
+import com.visteus.sporebreach.util.JitteredTimer;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -14,7 +15,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
 public final class DeadScarDecayDirector {
 
-    private static long counter;
+    private static final JitteredTimer TIMER = new JitteredTimer();
 
     private DeadScarDecayDirector() {
     }
@@ -28,8 +29,7 @@ public final class DeadScarDecayDirector {
             return;
         }
 
-        counter++;
-        if (!due(counter, SporeBreachServerConfig.DEAD_SCAR_DECAY_INTERVAL_TICKS.get())) {
+        if (!TIMER.tick(SporeBreachServerConfig.DEAD_SCAR_DECAY_INTERVAL_TICKS.get())) {
             return;
         }
 
@@ -37,9 +37,5 @@ public final class DeadScarDecayDirector {
             DeadScarDecayManager.topUpTickets(level);
             DeadScarDecayManager.advanceSweeps(level);
         }
-    }
-
-    private static boolean due(long counter, int interval) {
-        return interval > 0 && counter % interval == 0;
     }
 }

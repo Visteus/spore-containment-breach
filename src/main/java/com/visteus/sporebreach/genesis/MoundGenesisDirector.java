@@ -6,6 +6,7 @@ import com.mojang.logging.LogUtils;
 import com.visteus.sporebreach.SporeContainmentBreach;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import com.visteus.sporebreach.spawning.SpawnAnchors;
+import com.visteus.sporebreach.util.JitteredTimer;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.Map;
 import java.util.Optional;
@@ -37,7 +38,7 @@ public final class MoundGenesisDirector {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static long tickCounter;
+    private static final JitteredTimer TIMER = new JitteredTimer();
 
     private MoundGenesisDirector() {
     }
@@ -50,9 +51,8 @@ public final class MoundGenesisDirector {
         if (!SporeBreachServerConfig.MOUND_GENESIS_ENABLED.get()) {
             return;
         }
-        tickCounter++;
         int interval = SporeBreachServerConfig.MOUND_GENESIS_SCAN_INTERVAL_TICKS.get();
-        if (interval <= 0 || tickCounter % interval != 0) {
+        if (!TIMER.tick(interval)) {
             return;
         }
 

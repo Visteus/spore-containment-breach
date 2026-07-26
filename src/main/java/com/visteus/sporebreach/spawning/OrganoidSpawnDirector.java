@@ -7,6 +7,8 @@ import com.mojang.logging.LogUtils;
 import com.visteus.sporebreach.SporeContainmentBreach;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import com.visteus.sporebreach.tracking.OrganoidRegistry;
+import com.visteus.sporebreach.util.JitteredTimer;
+import com.visteus.sporebreach.util.OrganoidDistance;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -31,7 +33,7 @@ public final class OrganoidSpawnDirector {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static long tickCounter;
+    private static final JitteredTimer TIMER = new JitteredTimer();
 
     private OrganoidSpawnDirector() {
     }
@@ -41,9 +43,8 @@ public final class OrganoidSpawnDirector {
         if (!event.getServer().tickRateManager().runsNormally()) {
             return;
         }
-        tickCounter++;
         int interval = SporeBreachServerConfig.DIRECTOR_TICK_INTERVAL_TICKS.get();
-        if (interval <= 0 || tickCounter % interval != 0) {
+        if (!TIMER.tick(interval)) {
             return;
         }
 
@@ -93,7 +94,7 @@ public final class OrganoidSpawnDirector {
             return;
         }
 
-        eligible.sort(Comparator.comparingDouble(organoid -> nearestPlayerDistanceSqr(organoid, players)));
+        eligible.sort(Comparator.comparingDouble(organoid -> OrganoidDistance.nearestPlayerDistanceSqr(organoid, players)));
 
         int budget = SporeBreachServerConfig.DIRECTOR_BUDGET_PER_CYCLE.get();
         LOGGER.debug(
@@ -102,7 +103,7 @@ public final class OrganoidSpawnDirector {
         );
         for (int i = 0; i < eligible.size(); i++) {
             Organoid organoid = eligible.get(i);
-            double dist = Math.sqrt(nearestPlayerDistanceSqr(organoid, players));
+            double dist = Math.sqrt(OrganoidDistance.nearestPlayerDistanceSqr(organoid, players));
             BlockPos pos = organoid.getOnPos();
             LOGGER.debug(
                     "sporebreach:   [{}] {} at {} - {} blocks from nearest player{}",
@@ -123,16 +124,5 @@ public final class OrganoidSpawnDirector {
             }
             dispatched++;
         }
-    }
-
-    private static double nearestPlayerDistanceSqr(Organoid organoid, List<ServerPlayer> players) {
-        double best = Double.MAX_VALUE;
-        for (ServerPlayer player : players) {
-            double distSq = organoid.distanceToSqr(player);
-            if (distSq < best) {
-                best = distSq;
-            }
-        }
-        return best;
     }
 }

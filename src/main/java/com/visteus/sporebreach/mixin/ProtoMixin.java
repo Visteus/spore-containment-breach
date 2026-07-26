@@ -3,6 +3,7 @@ package com.visteus.sporebreach.mixin;
 import com.Harbinger.Spore.Sentities.Organoids.Proto;
 import com.Harbinger.Spore.Sentities.Organoids.Womb;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
+import com.visteus.sporebreach.util.TimerJitter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -58,7 +59,9 @@ public abstract class ProtoMixin {
         Proto self = (Proto) (Object) this;
         if (self.getSignal() == null) {
             int cooldownTicks = SporeBreachServerConfig.PROTO_WOMB_SIGNAL_COOLDOWN_TICKS.get();
-            self.getPersistentData().putLong(WOMB_SIGNAL_COOLDOWN_KEY, serverLevel.getGameTime() + cooldownTicks);
+            self.getPersistentData().putLong(
+                    WOMB_SIGNAL_COOLDOWN_KEY, TimerJitter.dueAt(self.getRandom(), serverLevel.getGameTime(), cooldownTicks)
+            );
         }
     }
 

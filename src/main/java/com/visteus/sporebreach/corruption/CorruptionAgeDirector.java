@@ -6,6 +6,7 @@ import com.visteus.sporebreach.SporeContainmentBreach;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import com.visteus.sporebreach.tracking.OrganoidRegistry;
 import com.visteus.sporebreach.tracking.ProtoAgeTracker;
+import com.visteus.sporebreach.util.JitteredTimer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -22,7 +23,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 @EventBusSubscriber(modid = SporeContainmentBreach.MODID)
 public final class CorruptionAgeDirector {
 
-    private static long tickCounter;
+    private static final JitteredTimer TIMER = new JitteredTimer();
 
     private CorruptionAgeDirector() {
     }
@@ -35,9 +36,8 @@ public final class CorruptionAgeDirector {
         if (!SporeBreachServerConfig.CORRUPTION_ENABLED.get()) {
             return;
         }
-        tickCounter++;
         int interval = SporeBreachServerConfig.CORRUPTION_AGE_SCAN_INTERVAL_TICKS.get();
-        if (interval <= 0 || tickCounter % interval != 0) {
+        if (!TIMER.tick(interval)) {
             return;
         }
 

@@ -48,7 +48,7 @@ public final class MoundStructureGrowth {
         }
 
         RandomSource random = mound.getRandom();
-        if (random.nextDouble() >= SporeBreachServerConfig.MOUND_STRUCTURE_PLACEMENT_CHANCE.get()) {
+        if (random.nextDouble() >= SporeBreachServerConfig.GROWTH_PLACEMENT_CHANCE.get()) {
             return;
         }
 

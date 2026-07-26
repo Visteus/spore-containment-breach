@@ -55,7 +55,7 @@ public final class ProtoStructureGrowth {
 
         RandomSource random = proto.getRandom();
         boolean isFirst = built == 0;
-        if (!isFirst && random.nextDouble() >= SporeBreachServerConfig.PROTO_STRUCTURE_PLACEMENT_CHANCE.get()) {
+        if (!isFirst && random.nextDouble() >= SporeBreachServerConfig.GROWTH_PLACEMENT_CHANCE.get()) {
             return;
         }
 
