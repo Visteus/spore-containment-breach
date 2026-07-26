@@ -1,37 +1,21 @@
 package com.visteus.sporebreach.structuregrowth;
 
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.core.BlockPos;
 
 /**
- * Per-organoid progress for the goal #3 structure growth system. Deliberately memory-only, not
- * persisted to disk - same rationale as
- * {@link com.visteus.sporebreach.tracking.OrganoidRegistry}: an organoid mid-job that unloads
- * simply restarts fresh next time it's picked up again, an acceptable loss for an in-progress
- * structure rather than something worth persisting.
+ * The in-flight half of an organoid's structure growth: which job is running right now and which
+ * persisted record it belongs to. What's already been built - anchors, counts toward the per-organoid
+ * cap, and enough detail to rebuild an unfinished job - lives in {@link StructureFootprintData}
+ * instead, so an organoid that unloads mid-tower picks up where it left off rather than starting over.
  */
 final class OrganoidStructureState {
 
-    private final List<BlockPos> anchors = new ArrayList<>();
-    private int structuresStarted;
     private StructureGrowthJob surfaceJob;
+    private StructureFootprintData.Record surfaceRecord;
     private StructureGrowthJob undergroundJob;
+    private StructureFootprintData.Record undergroundRecord;
     private BlockPos pendingUndergroundAnchor;
     private boolean pendingUndergroundGuaranteed;
-
-    List<BlockPos> anchors() {
-        return anchors;
-    }
-
-    int structuresStarted() {
-        return structuresStarted;
-    }
-
-    void recordAnchor(BlockPos pos) {
-        anchors.add(pos);
-        structuresStarted++;
-    }
 
     boolean hasActiveJob() {
         return surfaceJob != null || undergroundJob != null;
@@ -41,16 +25,36 @@ final class OrganoidStructureState {
         return surfaceJob;
     }
 
-    void setSurfaceJob(StructureGrowthJob job) {
+    StructureFootprintData.Record surfaceRecord() {
+        return surfaceRecord;
+    }
+
+    void setSurfaceJob(StructureGrowthJob job, StructureFootprintData.Record record) {
         surfaceJob = job;
+        surfaceRecord = record;
+    }
+
+    void clearSurfaceJob() {
+        surfaceJob = null;
+        surfaceRecord = null;
     }
 
     StructureGrowthJob undergroundJob() {
         return undergroundJob;
     }
 
-    void setUndergroundJob(StructureGrowthJob job) {
+    StructureFootprintData.Record undergroundRecord() {
+        return undergroundRecord;
+    }
+
+    void setUndergroundJob(StructureGrowthJob job, StructureFootprintData.Record record) {
         undergroundJob = job;
+        undergroundRecord = record;
+    }
+
+    void clearUndergroundJob() {
+        undergroundJob = null;
+        undergroundRecord = null;
     }
 
     BlockPos pendingUndergroundAnchor() {

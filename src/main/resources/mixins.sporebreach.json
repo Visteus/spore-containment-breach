@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "DespawnSystemMixin",
+    "HiveSpawnMixin",
     "MobMixin",
     "MoundStructureMixin",
     "ProtoMixin",

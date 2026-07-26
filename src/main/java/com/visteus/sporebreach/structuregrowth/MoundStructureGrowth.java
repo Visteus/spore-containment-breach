@@ -3,15 +3,15 @@ package com.visteus.sporebreach.structuregrowth;
 import com.Harbinger.Spore.Sentities.Organoids.Mound;
 import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import com.visteus.sporebreach.spawning.SpawnAnchors;
+import com.visteus.sporebreach.structuregrowth.StructureFootprintData.Kind;
+import com.visteus.sporebreach.structuregrowth.StructureFootprintData.Record;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.util.RandomSource;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
 /**
@@ -19,6 +19,8 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
  * always centered on the Mound itself (terrain-anchored, collision-pushed - see
  * {@link StructureGrowthJob}); the 2nd+ keep a random offset spread away from earlier anchors.
  * Each surface structure may optionally grow an underground companion beneath it once complete.
+ * What's already been built is tracked in {@link StructureFootprintData}, so both the per-Mound cap
+ * and an unfinished tower survive an unload.
  */
 public final class MoundStructureGrowth {
 
@@ -29,15 +31,19 @@ public final class MoundStructureGrowth {
 
     /** Called on the recheck cadence: decide whether to start a new job for this Mound. */
     public static void tryStartJob(ServerLevel level, Mound mound) {
-        if (mound.getAge() < SporeBreachServerConfig.MOUND_STRUCTURE_MIN_AGE.get()) {
-            return;
-        }
-
         OrganoidStructureState state = STATE.computeIfAbsent(mound.getUUID(), id -> new OrganoidStructureState());
         if (state.hasActiveJob()) {
             return;
         }
-        if (state.structuresStarted() >= SporeBreachServerConfig.MOUND_STRUCTURE_MAX_PER_MOUND.get()) {
+        if (resumeUnfinishedJob(level, mound, state)) {
+            return;
+        }
+
+        if (mound.getAge() < SporeBreachServerConfig.MOUND_STRUCTURE_MIN_AGE.get()) {
+            return;
+        }
+        if (StructureFootprintData.countOwned(level, mound.getUUID(), Kind.SURFACE)
+                >= SporeBreachServerConfig.MOUND_STRUCTURE_MAX_PER_MOUND.get()) {
             return;
         }
 
@@ -52,16 +58,19 @@ public final class MoundStructureGrowth {
             return;
         }
 
-        BlockPos anchor = resolveAnchor(level, mound, state, random);
+        BlockPos anchor = resolveAnchor(level, mound, random);
         if (anchor == null) {
             return;
         }
 
         StructureTemplate template = OrganoidStructurePlacer.resolveTemplate(level, entry.get().structureId());
-        StructureGrowthJob job = buildJob(template, anchor, false);
-        state.setSurfaceJob(job);
+        BlockPos origin = OrganoidStructurePlacer.jobOrigin(template, anchor, false);
+        Record record = StructureFootprintData.claim(
+                level, mound.getUUID(), Kind.SURFACE, entry.get().structureId(), anchor,
+                OrganoidStructurePlacer.footprint(template, origin), false
+        );
+        state.setSurfaceJob(OrganoidStructurePlacer.buildJobAtOrigin(template, origin, false), record);
         state.setPendingUndergroundAnchor(anchor);
-        state.recordAnchor(anchor);
     }
 
     /** Called on the pass cadence: advance whichever job is currently running for this Mound. */
@@ -76,19 +85,51 @@ public final class MoundStructureGrowth {
         if (state.surfaceJob() != null) {
             state.surfaceJob().advance(level, mound, random, blocksPerPass);
             if (state.surfaceJob().isComplete()) {
-                state.setSurfaceJob(null);
+                StructureFootprintData.markComplete(state.surfaceRecord());
+                state.clearSurfaceJob();
                 maybeStartUnderground(level, mound, state);
             }
         } else if (state.undergroundJob() != null) {
             state.undergroundJob().advance(level, mound, random, blocksPerPass);
             if (state.undergroundJob().isComplete()) {
-                state.setUndergroundJob(null);
+                StructureFootprintData.markComplete(state.undergroundRecord());
+                state.clearUndergroundJob();
             }
         }
     }
 
-    private static BlockPos resolveAnchor(ServerLevel level, Mound mound, OrganoidStructureState state, RandomSource random) {
-        if (state.structuresStarted() == 0) {
+    /**
+     * Rebuilds a job left unfinished by an unload. Growth re-walks the whole template rather than
+     * resuming at an exact block count - already-placed material is itself replaceable, so those
+     * positions are simply re-set to the state they already hold.
+     */
+    private static boolean resumeUnfinishedJob(ServerLevel level, Mound mound, OrganoidStructureState state) {
+        UUID id = mound.getUUID();
+        Optional<Record> surface = StructureFootprintData.incompleteFor(level, id, Kind.SURFACE);
+        if (surface.isPresent()) {
+            Record record = surface.get();
+            StructureTemplate template = OrganoidStructurePlacer.resolveTemplate(level, record.structureId());
+            state.setSurfaceJob(
+                    OrganoidStructurePlacer.buildJobAtOrigin(template, record.origin(), record.growDownward()), record
+            );
+            state.setPendingUndergroundAnchor(record.anchor());
+            return true;
+        }
+
+        Optional<Record> underground = StructureFootprintData.incompleteFor(level, id, Kind.UNDERGROUND);
+        if (underground.isPresent()) {
+            Record record = underground.get();
+            StructureTemplate template = OrganoidStructurePlacer.resolveTemplate(level, record.structureId());
+            state.setUndergroundJob(
+                    OrganoidStructurePlacer.buildJobAtOrigin(template, record.origin(), record.growDownward()), record
+            );
+            return true;
+        }
+        return false;
+    }
+
+    private static BlockPos resolveAnchor(ServerLevel level, Mound mound, RandomSource random) {
+        if (StructureFootprintData.countOwned(level, mound.getUUID(), Kind.SURFACE) == 0) {
             return new BlockPos(mound.getBlockX(), mound.getBlockY() - 2, mound.getBlockZ());
         }
 
@@ -99,11 +140,8 @@ public final class MoundStructureGrowth {
         }
 
         BlockPos pos = candidate.get();
-        double minDistanceSq = (double) minDistance * minDistance;
-        for (BlockPos existing : state.anchors()) {
-            if (existing.distSqr(pos) < minDistanceSq) {
-                return null;
-            }
+        if (StructureFootprintData.anyOwnedWithin(level, mound.getUUID(), Kind.SURFACE, pos, minDistance)) {
+            return null;
         }
         return new BlockPos(pos.getX(), OrganoidStructurePlacer.surfaceHeight(level, pos.getX(), pos.getZ()) - 2, pos.getZ());
     }
@@ -120,21 +158,19 @@ public final class MoundStructureGrowth {
             return;
         }
 
+        BlockPos anchor = state.pendingUndergroundAnchor();
         StructureTemplate template = OrganoidStructurePlacer.resolveTemplate(level, entry.get().structureId());
-        StructureGrowthJob job = buildJob(template, state.pendingUndergroundAnchor(), true);
+        BlockPos origin = OrganoidStructurePlacer.jobOrigin(template, anchor, true);
+        StructureGrowthJob job = OrganoidStructurePlacer.buildJobAtOrigin(template, origin, true);
         double minCoverage = SporeBreachServerConfig.STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE.get();
         if (OrganoidStructurePlacer.naturalGroundCoverage(level, job) < minCoverage) {
             return;
         }
-        state.setUndergroundJob(job);
-    }
 
-    private static StructureGrowthJob buildJob(StructureTemplate template, BlockPos anchor, boolean growDownward) {
-        Vec3i size = template.getSize();
-        BlockPos origin = growDownward
-                ? new BlockPos(anchor.getX() - size.getX() / 2, anchor.getY() - size.getY(), anchor.getZ() - size.getZ() / 2)
-                : new BlockPos(anchor.getX() - size.getX() / 2, anchor.getY(), anchor.getZ() - size.getZ() / 2);
-        StructurePlaceSettings settings = new StructurePlaceSettings();
-        return new StructureGrowthJob(OrganoidStructurePlacer.worldBlocks(template, origin, settings), growDownward);
+        Record record = StructureFootprintData.claim(
+                level, mound.getUUID(), Kind.UNDERGROUND, entry.get().structureId(), anchor,
+                OrganoidStructurePlacer.footprint(template, origin), true
+        );
+        state.setUndergroundJob(job, record);
     }
 }

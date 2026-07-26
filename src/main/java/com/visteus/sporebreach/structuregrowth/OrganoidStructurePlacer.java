@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -13,6 +14,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
@@ -61,6 +63,35 @@ public final class OrganoidStructurePlacer {
             result.add(new StructureTemplate.StructureBlockInfo(worldPos, worldState, info.nbt()));
         }
         return result;
+    }
+
+    /**
+     * Where {@code template}'s own (0,0,0) corner lands for a job anchored at {@code anchor}:
+     * horizontally centered on the anchor, and either rising from it or hanging beneath it. Kept
+     * separate from {@link #buildJobAtOrigin} so a job can be rebuilt later from nothing but the
+     * origin it was first given - see {@code StructureFootprintData}'s resume path.
+     */
+    public static BlockPos jobOrigin(StructureTemplate template, BlockPos anchor, boolean growDownward) {
+        Vec3i size = template.getSize();
+        int y = growDownward ? anchor.getY() - size.getY() : anchor.getY();
+        return new BlockPos(anchor.getX() - size.getX() / 2, y, anchor.getZ() - size.getZ() / 2);
+    }
+
+    /** The space {@code template} will occupy if placed at {@code origin}, without building a job. */
+    public static BoundingBox footprint(StructureTemplate template, BlockPos origin) {
+        Vec3i size = template.getSize();
+        return new BoundingBox(
+                origin.getX(), origin.getY(), origin.getZ(),
+                origin.getX() + size.getX() - 1, origin.getY() + size.getY() - 1, origin.getZ() + size.getZ() - 1
+        );
+    }
+
+    public static StructureGrowthJob buildJobAtOrigin(StructureTemplate template, BlockPos origin, boolean growDownward) {
+        return new StructureGrowthJob(worldBlocks(template, origin, new StructurePlaceSettings()), growDownward);
+    }
+
+    public static StructureGrowthJob buildJob(StructureTemplate template, BlockPos anchor, boolean growDownward) {
+        return buildJobAtOrigin(template, jobOrigin(template, anchor, growDownward), growDownward);
     }
 
     /** Real terrain surface height at the given column - the anchor Y for a new surface job. */

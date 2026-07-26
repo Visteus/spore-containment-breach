@@ -120,6 +120,17 @@ public final class SporeBreachServerConfig {
     public static final EnumValue<StructureGrowthMode> STRUCTURE_GROWTH_MODE;
     public static final DoubleValue STRUCTURE_UNDERGROUND_MIN_NATURAL_GROUND_COVERAGE;
     public static final ConfigValue<List<? extends String>> STRUCTURE_GROWTH_REPLACEABLE_BLOCKS;
+    public static final BooleanValue OUTPOST_WATCHER_ENABLED;
+    public static final IntValue OUTPOST_WATCHER_RECHECK_INTERVAL_TICKS;
+    public static final IntValue OUTPOST_WATCHER_PASS_INTERVAL_TICKS;
+    public static final DoubleValue OUTPOST_WATCHER_PLACEMENT_CHANCE;
+    public static final IntValue OUTPOST_WATCHER_MIN_AGE;
+    public static final IntValue OUTPOST_WATCHER_MAX_PER_ORGANOID;
+    public static final IntValue OUTPOST_WATCHER_MIN_DISTANCE_BETWEEN;
+    public static final IntValue OUTPOST_WATCHER_MIN_CLEARANCE;
+    public static final IntValue OUTPOST_WATCHER_BLOCKS_PER_PASS;
+    public static final BooleanValue OUTPOST_WATCHER_SUPPRESS_BASE_TOWERS;
+    public static final ConfigValue<List<? extends String>> OUTPOST_WATCHER_POOL;
 
     public static final IntValue MOUND_STRUCTURE_RECHECK_INTERVAL_TICKS;
     public static final IntValue MOUND_STRUCTURE_PASS_INTERVAL_TICKS;
@@ -382,6 +393,63 @@ public final class SporeBreachServerConfig {
                                         () -> "#namespace:tag_path or namespace:block_id",
                                         o -> o instanceof String
                                 );
+
+                        builder.push("outpostWatchers");
+                                OUTPOST_WATCHER_ENABLED = builder
+                                        .comment(" Whether Mounds and Proto-Hiveminds occasionally grow Outpost Watcher towers",
+                                                " within the area they already keep loaded. Default true.")
+                                        .define("enabled", true);
+                                OUTPOST_WATCHER_RECHECK_INTERVAL_TICKS = builder
+                                        .comment(" How often (in ticks) each Mound and Proto-Hivemind rolls to start a new Outpost Watcher tower.",
+                                                " Default 6000 (5 min).")
+                                        .defineInRange("recheckIntervalTicks", 6000, 20, Integer.MAX_VALUE);
+                                OUTPOST_WATCHER_PASS_INTERVAL_TICKS = builder
+                                        .comment(" How often (in ticks) an in-progress Outpost Watcher tower is advanced by one building pass. ",
+                                                " Default 40 (2s).")
+                                        .defineInRange("passIntervalTicks", 40, 20, Integer.MAX_VALUE);
+                                OUTPOST_WATCHER_PLACEMENT_CHANCE = builder
+                                        .comment(" Chance, checked every recheckIntervalTicks, that an organoid starts a new Outpost Watcher tower. ",
+                                                " Default 0.1.")
+                                        .defineInRange("placementChance", 0.1, 0.0, 1.0);
+                                OUTPOST_WATCHER_MIN_AGE = builder
+                                        .comment(" Minimum age before a Mound or Proto-Hivemind starts rolling for Outpost Watchers.",
+                                                " Default 1.")
+                                        .defineInRange("minAge", 1, 0, Integer.MAX_VALUE);
+                                OUTPOST_WATCHER_MAX_PER_ORGANOID = builder
+                                        .comment(" Max Outpost Watcher towers a single organoid will grow.",
+                                                " Default 8.")
+                                        .defineInRange("maxPerOrganoid", 8, 0, Integer.MAX_VALUE);
+                                OUTPOST_WATCHER_MIN_DISTANCE_BETWEEN = builder
+                                        .comment(" Minimum distance (blocks) a new tower must keep from any existing Outpost Watcher block.",
+                                                " Default 32.")
+                                        .defineInRange("minDistanceBetweenOutposts", 32, 0, Integer.MAX_VALUE);
+                                OUTPOST_WATCHER_MIN_CLEARANCE = builder
+                                        .comment(" Minimum gap in blocks a new tower must leave around every other grown structure.",
+                                                " Default 1.")
+                                        .defineInRange("minClearanceFromStructures", 1, 0, Integer.MAX_VALUE);
+                                OUTPOST_WATCHER_BLOCKS_PER_PASS = builder
+                                        .comment(" Max blocks placed per building pass.",
+                                                "  Default 20.")
+                                        .defineInRange("blocksPerPass", 20, 1, Integer.MAX_VALUE);
+                                OUTPOST_WATCHER_SUPPRESS_BASE_TOWERS = builder
+                                        .comment(" Whether to stop Reconstructed Minds from dropping their own instant Outpost",
+                                                " Watcher tower when they mature too close to a Proto-Hivemind, leaving this",
+                                                " mod's slower grown towers as the only source. Also stops that drop from repeating every few seconds.",
+                                                " Default true.")
+                                        .define("suppressBaseSporeTowers", true);
+                                OUTPOST_WATCHER_POOL = builder
+                                        .comment(" Towers that may be grown as Outpost Watchers. Each should contain an outpost watcher block.",
+                                                "  Format: \"structureId|weight\".")
+                                        .defineListAllowEmpty(
+                                                "structurePool",
+                                                () -> Lists.newArrayList(
+                                                        "spore:mega_biomass_tower|85",
+                                                        "sporebreach:outpost_watcher_tower|15"
+                                                ),
+                                                () -> "modid:structure_id|weight",
+                                                o -> o instanceof String
+                                        );
+                        builder.pop();
                 builder.pop();
 
         builder.pop();
