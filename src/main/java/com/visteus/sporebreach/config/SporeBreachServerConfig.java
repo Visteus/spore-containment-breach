@@ -422,24 +422,28 @@ public final class SporeBreachServerConfig {
                                                 " Default 40 (2s).")
                                         .defineInRange("scanIntervalTicks", 40, 20, Integer.MAX_VALUE);
                                 MOUND_GENESIS_ELIGIBLE_STRUCTURES = builder
-                                        .comment(" Structures that spawn a Mound the first time a player comes near them.",
-                                                " Each entry is either \"#namespace:path\" (a structure tag) or \"namespace:path\" (a single structure id)."
+                                        .comment(" Structures that can spawn Mounds the first time a player comes near them.",
+                                                " Format: \"#namespace:path|chance\" (a structure tag) or \"namespace:path|chance\" (a single structure id).",
+                                                " Chance is 0.0-1.0 and controls how likely each individual structure is to get Mounds at all.",
+                                                " The result is fixed per structure, so it will not re-roll over time.",
+                                                " A structure id entry overrides any tag entry that also covers that structure."
                                         )
                                         .defineListAllowEmpty(
                                                 "eligibleStructures",
                                                 () -> Lists.newArrayList(
-                                                        "#spore:laboratories",
-                                                        "#spore:churches",
-                                                        "spore:cell",
-                                                        "spore:celltower",
-                                                        "spore:iceberg_mines",
-                                                        "spore:lodge",
-                                                        "spore:mass_grave",
-                                                        "sporebreach:end_lab",
-                                                        "sporebreach:nether_lab",
-                                                        "sporebreach:warped_lab"
+                                                        "#spore:laboratories|1.0",
+                                                        "#spore:churches|1.0",
+                                                        "#minecraft:village|0.25",
+                                                        "spore:cell|1.0",
+                                                        "spore:celltower|1.0",
+                                                        "spore:iceberg_mines|1.0",
+                                                        "spore:lodge|0.75",
+                                                        "spore:mass_grave|1.0",
+                                                        "sporebreach:end_lab|1.0",
+                                                        "sporebreach:nether_lab|1.0",
+                                                        "sporebreach:warped_lab|1.0"
                                                 ),
-                                                () -> "#namespace:tag_path or namespace:structure_id",
+                                                () -> "#namespace:tag_path|chance or namespace:structure_id|chance",
                                                 o -> o instanceof String
                                         );
                                 MOUND_GENESIS_COUNT_MIN = builder

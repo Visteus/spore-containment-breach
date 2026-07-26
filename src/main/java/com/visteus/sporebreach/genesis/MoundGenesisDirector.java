@@ -9,6 +9,7 @@ import com.visteus.sporebreach.spawning.SpawnAnchors;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -77,7 +78,8 @@ public final class MoundGenesisDirector {
 
         for (Structure structure : nearby.keySet()) {
             Holder<Structure> holder = level.registryAccess().registryOrThrow(Registries.STRUCTURE).wrapAsHolder(structure);
-            if (!selector.matches(holder)) {
+            OptionalDouble chance = selector.chanceFor(holder);
+            if (chance.isEmpty()) {
                 continue;
             }
 
@@ -86,16 +88,19 @@ public final class MoundGenesisDirector {
                 continue;
             }
 
-            attemptGenesis(level, start.getBoundingBox());
+            attemptGenesis(level, start.getBoundingBox(), chance.getAsDouble());
         }
     }
 
-    private static void attemptGenesis(ServerLevel level, BoundingBox structureBox) {
+    private static void attemptGenesis(ServerLevel level, BoundingBox structureBox, double chance) {
         BlockPos anchor = structureBox.getCenter();
         if (MoundGenesisData.hasSeeded(level, anchor)) {
             return;
         }
         if (SpawnAnchors.isWithinProtectedSpawnRadius(level, anchor)) {
+            return;
+        }
+        if (!rollsGenesis(level, anchor, chance)) {
             return;
         }
 
@@ -136,5 +141,22 @@ public final class MoundGenesisDirector {
             LOGGER.debug("sporebreach: genesis-placed {} Mound(s) at structure anchor {}", placed, anchor);
             MoundGenesisData.markSeeded(level, anchor);
         }
+    }
+
+    /**
+     * Deterministic per-anchor roll of a structure's configured spawn chance, seeded from the world
+     * seed and the anchor. Because the same structure always rolls the same way, a "no Mound" result
+     * needs no persistence to stick, and re-scanning a site that rolled "yes" but had no room to
+     * place cannot re-roll its way out of that answer - a plain random roll every scan interval
+     * would turn any chance below 1.0 into a near-certainty over time.
+     */
+    private static boolean rollsGenesis(ServerLevel level, BlockPos anchor, double chance) {
+        if (chance >= 1.0) {
+            return true;
+        }
+        if (chance <= 0.0) {
+            return false;
+        }
+        return RandomSource.create(level.getSeed() ^ anchor.asLong()).nextDouble() < chance;
     }
 }
