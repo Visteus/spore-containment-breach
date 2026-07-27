@@ -581,15 +581,17 @@ public final class SporeBreachServerConfig {
                                         .comment(" Max blocks placed per building pass. Default 20.")
                                         .defineInRange("blocksPerPass", 20, 1, Integer.MAX_VALUE);
                                 MOUND_STRUCTURE_POOL = builder
-                                        .comment(" Structures a Mound may grow around itself. Format: \"structureId|weight\".")
+                                        .comment(" Structures a Mound may grow around itself. verticalOffset shifts the structure's",
+                                                " anchor up (positive) or down (negative) from ground/Mound level; omit it to default to 0.",
+                                                " Format: \"structureId|weight\" or \"structureId|weight|verticalOffset\".")
                                         .defineListAllowEmpty(
                                                 "structurePool",
                                                 () -> Lists.newArrayList(
-                                                        "sporebreach:mound_watchtower|30",
-                                                        "sporebreach:mound_fort_bulb|35",
-                                                        "sporebreach:mound_fort_cluster|35"
+                                                        "sporebreach:mound_watchtower|30|-3",
+                                                        "sporebreach:mound_fort_bulb|35|-2",
+                                                        "sporebreach:mound_fort_cluster|35|-2"
                                                 ),
-                                                () -> "modid:structure_id|weight",
+                                                () -> "modid:structure_id|weight|verticalOffset",
                                                 o -> o instanceof String
                                         );
                                 MOUND_STRUCTURE_UNDERGROUND_CHANCE = builder
@@ -790,17 +792,19 @@ public final class SporeBreachServerConfig {
                                         .comment(" Max blocks placed per building pass. Default 200.")
                                         .defineInRange("blocksPerPass", 200, 1, Integer.MAX_VALUE);
                                 PROTO_STRUCTURE_POOL = builder
-                                        .comment(" Structures a Proto-Hivemind may grow around itself. Format: \"structureId|weight\".")
+                                        .comment(" Structures a Proto-Hivemind may grow around itself. verticalOffset shifts the structure's",
+                                                " anchor up (positive) or down (negative) from ground/Proto-Hivemind level; omit it to default to 0.",
+                                                " Format: \"structureId|weight\" or \"structureId|weight|verticalOffset\".")
                                         .defineListAllowEmpty(
                                                 "structurePool",
                                                 () -> Lists.newArrayList(
-                                                        "sporebreach:proto_spire_hollow|40",
-                                                        "sporebreach:proto_spire_hollow_alt|40",
-                                                        "sporebreach:proto_spire_apex|20",
-                                                        "sporebreach:proto_spire_needle|20",
-                                                        "sporebreach:proto_spire_shelf|20"
+                                                        "sporebreach:proto_spire_hollow|40|-45",
+                                                        "sporebreach:proto_spire_hollow_alt|40|-45",
+                                                        "sporebreach:proto_spire_apex|20|-30",
+                                                        "sporebreach:proto_spire_needle|20|-30",
+                                                        "sporebreach:proto_spire_shelf|20|-60"
                                                 ),
-                                                () -> "modid:structure_id|weight",
+                                                () -> "modid:structure_id|weight|verticalOffset",
                                                 o -> o instanceof String
                                         );
                                 PROTO_STRUCTURE_UNDERGROUND_CHANCE = builder

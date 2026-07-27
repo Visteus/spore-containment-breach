@@ -58,7 +58,7 @@ public final class MoundStructureGrowth {
             return;
         }
 
-        BlockPos anchor = resolveAnchor(level, mound, random);
+        BlockPos anchor = resolveAnchor(level, mound, random, entry.get().verticalOffset());
         if (anchor == null) {
             return;
         }
@@ -128,9 +128,9 @@ public final class MoundStructureGrowth {
         return false;
     }
 
-    private static BlockPos resolveAnchor(ServerLevel level, Mound mound, RandomSource random) {
+    private static BlockPos resolveAnchor(ServerLevel level, Mound mound, RandomSource random, int verticalOffset) {
         if (StructureFootprintData.countOwned(level, mound.getUUID(), Kind.SURFACE) == 0) {
-            return new BlockPos(mound.getBlockX(), mound.getBlockY() - 2, mound.getBlockZ());
+            return new BlockPos(mound.getBlockX(), mound.getBlockY() + verticalOffset, mound.getBlockZ());
         }
 
         int minDistance = SporeBreachServerConfig.MOUND_STRUCTURE_MIN_DISTANCE.get();
@@ -143,7 +143,7 @@ public final class MoundStructureGrowth {
         if (StructureFootprintData.anyOwnedWithin(level, mound.getUUID(), Kind.SURFACE, pos, minDistance)) {
             return null;
         }
-        return new BlockPos(pos.getX(), OrganoidStructurePlacer.surfaceHeight(level, pos.getX(), pos.getZ()) - 2, pos.getZ());
+        return new BlockPos(pos.getX(), OrganoidStructurePlacer.surfaceHeight(level, pos.getX(), pos.getZ()) + verticalOffset, pos.getZ());
     }
 
     private static void maybeStartUnderground(ServerLevel level, Mound mound, OrganoidStructureState state) {

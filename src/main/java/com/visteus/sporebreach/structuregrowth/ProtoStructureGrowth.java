@@ -65,7 +65,7 @@ public final class ProtoStructureGrowth {
             return;
         }
 
-        BlockPos anchor = resolveAnchor(level, proto, isFirst, random);
+        BlockPos anchor = resolveAnchor(level, proto, isFirst, random, picked.get().verticalOffset());
         if (anchor == null) {
             return;
         }
@@ -143,9 +143,9 @@ public final class ProtoStructureGrowth {
         return false;
     }
 
-    private static BlockPos resolveAnchor(ServerLevel level, Proto proto, boolean isFirst, RandomSource random) {
+    private static BlockPos resolveAnchor(ServerLevel level, Proto proto, boolean isFirst, RandomSource random, int verticalOffset) {
         if (isFirst) {
-            return new BlockPos(proto.getBlockX(), proto.getBlockY() - 2, proto.getBlockZ());
+            return new BlockPos(proto.getBlockX(), proto.getBlockY() + verticalOffset, proto.getBlockZ());
         }
 
         int minDistance = SporeBreachServerConfig.PROTO_STRUCTURE_MIN_DISTANCE.get();
@@ -158,7 +158,7 @@ public final class ProtoStructureGrowth {
         if (StructureFootprintData.anyOwnedWithin(level, proto.getUUID(), Kind.SURFACE, pos, minDistance)) {
             return null;
         }
-        return new BlockPos(pos.getX(), OrganoidStructurePlacer.surfaceHeight(level, pos.getX(), pos.getZ()) - 2, pos.getZ());
+        return new BlockPos(pos.getX(), OrganoidStructurePlacer.surfaceHeight(level, pos.getX(), pos.getZ()) + verticalOffset, pos.getZ());
     }
 
     private static void maybeStartUnderground(ServerLevel level, Proto proto, OrganoidStructureState state) {
