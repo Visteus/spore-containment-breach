@@ -435,7 +435,10 @@ public final class SporeBreachServerConfig {
                                                 "minecraft:lava",
                                                 "#minecraft:leaves",
                                                 "#minecraft:logs",
-                                                "#minecraft:planks"
+                                                "#minecraft:planks",
+                                                "#minecraft:moss_replaceable", 
+                                                "#terralith:soil_stone", 
+                                                "#terralith:dirt_and_stone"
                                         ),
                                         () -> "#namespace:tag_path or namespace:block_id",
                                         o -> o instanceof String
