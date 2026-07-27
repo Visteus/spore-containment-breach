@@ -217,7 +217,7 @@ public final class SporeBreachServerConfig {
                         GROWTH_UNDERGROUND_DEPTH_PENALTY_TICKS_PER_BLOCK = builder
                                 .comment(" Extra ticks added to (or subtracted from) a Mound/Proto-Hivemind's 'overdue-ness'",
                                         " per block of Y-level below (or above) Y=0, so structures higher up tend to get built faster",
-                                        " than those below them. Set to 0 to disable.".
+                                        " than those below them. Set to 0 to disable.",
                                         " Default 4.")
                                 .defineInRange("undergroundDepthPenaltyTicksPerBlock", 4, 0, Integer.MAX_VALUE);
                 builder.pop();
