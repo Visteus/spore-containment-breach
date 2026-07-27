@@ -9,6 +9,7 @@ import com.visteus.sporebreach.config.SporeBreachServerConfig;
 import com.visteus.sporebreach.config.SporeBreachServerConfig.StructureGrowthMode;
 import com.visteus.sporebreach.tracking.OrganoidRegistry;
 import com.visteus.sporebreach.util.JitteredTimer;
+import com.visteus.sporebreach.util.OrganoidDepthBias;
 import com.visteus.sporebreach.util.OrganoidDistance;
 import com.visteus.sporebreach.util.OrganoidDue;
 import com.visteus.sporebreach.util.TimerJitter;
@@ -89,8 +90,9 @@ public final class StructureGrowthDirector {
         }
 
         List<ServerPlayer> players = level.players();
+        int depthPenalty = SporeBreachServerConfig.GROWTH_UNDERGROUND_DEPTH_PENALTY_TICKS_PER_BLOCK.get();
         candidates.sort(
-                Comparator.comparingLong(OrganoidDue::dueAt)
+                Comparator.<OrganoidDue>comparingLong(c -> OrganoidDepthBias.biasedDueAt(c, depthPenalty))
                         .thenComparingDouble(c -> OrganoidDistance.nearestPlayerDistanceSqr(c.organoid(), players))
         );
 

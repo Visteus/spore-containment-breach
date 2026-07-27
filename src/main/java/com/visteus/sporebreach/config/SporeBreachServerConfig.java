@@ -32,6 +32,7 @@ public final class SporeBreachServerConfig {
     public static final IntValue MOUND_STRUCTURE_BLOCKS_PER_SWEEP;
     public static final IntValue PROTO_STRUCTURE_BLOCKS_PER_SWEEP;
     public static final IntValue WATCHER_BLOCKS_PER_SWEEP;
+    public static final IntValue GROWTH_UNDERGROUND_DEPTH_PENALTY_TICKS_PER_BLOCK;
 
     public static final IntValue DIRECTOR_TICK_INTERVAL_TICKS;
     public static final IntValue DIRECTOR_BUDGET_PER_CYCLE;
@@ -202,17 +203,23 @@ public final class SporeBreachServerConfig {
                                 .defineInRange("placementChance", 0.1, 0.0, 1.0);
                         MOUND_STRUCTURE_BLOCKS_PER_SWEEP = builder
                                 .comment(" Max blocks all Mounds together may place on their own structures per sweep.",
-                                        " Default 64.")
-                                .defineInRange("moundStructureBlocksPerSweep", 64, 1, Integer.MAX_VALUE);
+                                        " Default 100.")
+                                .defineInRange("moundStructureBlocksPerSweep", 100, 1, Integer.MAX_VALUE);
                         PROTO_STRUCTURE_BLOCKS_PER_SWEEP = builder
-                                .comment(" Max blocks all Proto-Hiveminds together may place on their own structures per",
-                                        " sweep. Default 128.")
-                                .defineInRange("protoStructureBlocksPerSweep", 128, 1, Integer.MAX_VALUE);
+                                .comment(" Max blocks all Proto-Hiveminds together may place on their own structures per sweep.",
+                                        " Default 400.")
+                                .defineInRange("protoStructureBlocksPerSweep", 400, 1, Integer.MAX_VALUE);
                         WATCHER_BLOCKS_PER_SWEEP = builder
                                 .comment(" Max blocks all Mounds and Proto-Hiveminds together may place on Outpost Watchers",
                                         " per sweep. Shared between both organoid types, matching how every other Outpost",
                                         " Watcher setting already works. Default 192.")
                                 .defineInRange("watcherBlocksPerSweep", 192, 1, Integer.MAX_VALUE);
+                        GROWTH_UNDERGROUND_DEPTH_PENALTY_TICKS_PER_BLOCK = builder
+                                .comment(" Extra ticks added to (or subtracted from) a Mound/Proto-Hivemind's 'overdue-ness'",
+                                        " per block of Y-level below (or above) Y=0, so structures higher up tend to get built faster",
+                                        " than those below them. Set to 0 to disable.".
+                                        " Default 4.")
+                                .defineInRange("undergroundDepthPenaltyTicksPerBlock", 4, 0, Integer.MAX_VALUE);
                 builder.pop();
 
                 builder.push("director");
