@@ -20,6 +20,7 @@ import java.util.UUID;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -73,9 +74,11 @@ public final class BiomePaintManager {
      * (via {@link BiomePaintData#claim}), rather than re-checked at processing time, since {@code
      * claim} isn't safe to call twice for the same (owner, chunk) pair - a second call would see
      * the column already {@code ACTIVE} and wrongly report "no paint needed" even if the first
-     * call's actual paint attempt hasn't happened yet.
+     * call's actual paint attempt hasn't happened yet. {@code minY}/{@code maxY} are the column's
+     * resolved painted envelope from that same claim - meaningless (and unused) when {@code
+     * needsPaint} is false.
      */
-    private record PaintTask(ChunkPos pos, boolean needsPaint, long readyAtGameTime) {
+    private record PaintTask(ChunkPos pos, boolean needsPaint, long readyAtGameTime, int minY, int maxY) {
     }
 
     private BiomePaintManager() {
@@ -97,12 +100,19 @@ public final class BiomePaintManager {
             allowedRadiusByOwner.put(ownerId, chunkloadState.lastIssuedRadius() + extraRadius);
 
             if (!discoveredByOwner.containsKey(ownerId)) {
+                int anchorY = resolveAnchorY(level, ownerId, chunkloadState);
+                if (anchorY == ChunkloadState.ANCHOR_Y_UNSET) {
+                    continue;
+                }
                 ChunkPos anchor = chunkloadState.anchorChunk();
                 Set<ChunkPos> discovered = new HashSet<>();
                 Queue<PaintTask> frontier = new PriorityQueue<>(Comparator.comparingLong(task -> distanceSq(task.pos(), anchor)));
                 discoveredByOwner.put(ownerId, discovered);
                 frontierByOwner.put(ownerId, frontier);
-                discover(level, ownerId, anchor, frontier, discovered, level.getGameTime());
+                discover(
+                        level, ownerId, anchor, anchor, anchorY, allowedRadiusByOwner.get(ownerId), frontier, discovered,
+                        level.getGameTime()
+                );
 
                 if (SporeBreachServerConfig.AREA_WATER_REPLACEMENT_ENABLED.get()) {
                     waterJobByDimension.computeIfAbsent(level.dimension(), key -> new AreaWaterReplacementJob())
@@ -113,24 +123,51 @@ public final class BiomePaintManager {
     }
 
     /**
+     * Resolves the vertical center of {@code ownerId}'s biome-paint sphere. {@code chunkloadState}
+     * already carries a frozen {@link ChunkloadState#anchorY()} for anything activated after that
+     * field was added; state loaded from an older save falls back to a live entity lookup instead
+     * (organoids are stationary, so this is just as good as a value frozen at activation) - if the
+     * entity can't currently be resolved either, returns {@link ChunkloadState#ANCHOR_Y_UNSET} so
+     * the caller can defer discovery to a later recheck rather than centering on a wrong Y.
+     */
+    private static int resolveAnchorY(ServerLevel level, UUID ownerId, ChunkloadState chunkloadState) {
+        if (chunkloadState.anchorY() != ChunkloadState.ANCHOR_Y_UNSET) {
+            return chunkloadState.anchorY();
+        }
+        Entity entity = level.getEntity(ownerId);
+        return entity != null ? entity.blockPosition().getY() : ChunkloadState.ANCHOR_Y_UNSET;
+    }
+
+    /**
      * Claims and (if needed) force-loads {@code pos} for {@code ownerId} exactly once, then queues
      * it for an eventual paint attempt - immediately, if the column is already active (another
      * owner reached it first, or a reactivation), or after {@link #SETTLE_TICKS} if this owner
-     * needs to actually call {@link BiomeRepaint}.
+     * needs to actually call {@link BiomeRepaint}. The column's paint band is resolved here too, via
+     * {@link BiomePaintShape}, from this owner's frozen anchor and its currently-allowed radius.
      */
     private static void discover(
-            ServerLevel level, UUID ownerId, ChunkPos pos, Queue<PaintTask> frontier, Set<ChunkPos> discovered, long now
+            ServerLevel level, UUID ownerId, ChunkPos pos, ChunkPos anchor, int anchorY, int allowedRadius,
+            Queue<PaintTask> frontier, Set<ChunkPos> discovered, long now
     ) {
         if (!discovered.add(pos)) {
             return;
         }
-        BiomePaintData.ClaimResult result = BiomePaintData.claim(level, pos, ownerId);
+        int[] range = BiomePaintShape.verticalRange(
+                pos, anchor, anchorY, allowedRadius * 16, level.getMinBuildHeight(), level.getMaxBuildHeight()
+        );
+        // An inverted (empty) band signals "no vertical intersection" to BiomePaintData.claim
+        // without a separate sentinel - the column still gets claimed/ticketed for BFS continuity,
+        // it just never reaches BiomeRepaint.
+        int minY = range != null ? range[0] : 1;
+        int maxY = range != null ? range[1] : 0;
+
+        BiomePaintData.ClaimResult result = BiomePaintData.claim(level, pos, ownerId, minY, maxY);
         DeadScarDecayManager.cancel(level, pos);
         if (result.needsTicket()) {
             ChunkloadManager.forceBiomePaintChunk(level, ownerId, pos.x, pos.z, true);
         }
         long readyAt = result.needsPaint() ? now + SETTLE_TICKS : now;
-        frontier.offer(new PaintTask(pos, result.needsPaint(), readyAt));
+        frontier.offer(new PaintTask(pos, result.needsPaint(), readyAt, result.paintMinY(), result.paintMaxY()));
     }
 
     private static long distanceSq(ChunkPos pos, ChunkPos anchor) {
@@ -163,9 +200,13 @@ public final class BiomePaintManager {
             if (frontier == null || frontier.isEmpty()) {
                 continue;
             }
+            int anchorY = resolveAnchorY(level, ownerId, owner.getValue());
+            if (anchorY == ChunkloadState.ANCHOR_Y_UNSET) {
+                continue;
+            }
             budget -= drainFrontier(
                     level, ownerId, frontier, discoveredByOwner.get(ownerId),
-                    owner.getValue().anchorChunk(), allowedRadiusByOwner.getOrDefault(ownerId, 0), now, budget
+                    owner.getValue().anchorChunk(), anchorY, allowedRadiusByOwner.getOrDefault(ownerId, 0), now, budget
             );
         }
     }
@@ -173,7 +214,7 @@ public final class BiomePaintManager {
     /** Returns how much of {@code budget} was actually spent on real paint calls. */
     private static int drainFrontier(
             ServerLevel level, UUID ownerId, Queue<PaintTask> frontier, Set<ChunkPos> discovered,
-            ChunkPos anchor, int allowedRadius, long now, int budget
+            ChunkPos anchor, int anchorY, int allowedRadius, long now, int budget
     ) {
         Set<ChunkCircleOffsets.ChunkOffset> allowedOffsets = ChunkCircleOffsets.fullOffsets(allowedRadius);
         int consumed = 0;
@@ -190,15 +231,15 @@ public final class BiomePaintManager {
 
             boolean confirmedPainted;
             if (task.needsPaint()) {
-                if (BiomeRepaint.paintColumn(level, task.pos(), BiomeRepaint.INFECTION_ZONE)) {
+                if (BiomeRepaint.paintColumn(level, task.pos(), BiomeRepaint.INFECTION_ZONE, task.minY(), task.maxY())) {
                     confirmedPainted = true;
                     consumed++;
                     LOGGER.info(
-                            "sporebreach: painted chunk {} to {} for owner {}",
-                            task.pos(), BiomeRepaint.INFECTION_ZONE.location(), ownerId
+                            "sporebreach: painted chunk {} y={}..{} to {} for owner {}",
+                            task.pos(), task.minY(), task.maxY(), BiomeRepaint.INFECTION_ZONE.location(), ownerId
                     );
                 } else {
-                    frontier.offer(new PaintTask(task.pos(), true, now + RETRY_DELAY_TICKS));
+                    frontier.offer(new PaintTask(task.pos(), true, now + RETRY_DELAY_TICKS, task.minY(), task.maxY()));
                     confirmedPainted = false;
                 }
             } else {
@@ -208,7 +249,7 @@ public final class BiomePaintManager {
             if (confirmedPainted) {
                 for (int[] neighborOffset : NEIGHBOR_OFFSETS) {
                     ChunkPos neighbor = new ChunkPos(task.pos().x + neighborOffset[0], task.pos().z + neighborOffset[1]);
-                    discover(level, ownerId, neighbor, frontier, discovered, now);
+                    discover(level, ownerId, neighbor, anchor, anchorY, allowedRadius, frontier, discovered, now);
                 }
             }
         }
@@ -288,15 +329,26 @@ public final class BiomePaintManager {
     /**
      * Called every biomePaintRecheckIntervalTicks by BiomePaintGrowthDirector, after {@link
      * #advance}. Repaints any column whose lingering-scar countdown has elapsed to {@link
-     * BiomeRepaint#DEAD_SCAR}, releasing its force-load ticket only once that repaint actually
-     * succeeds - a column whose chunk happens to not be loaded right now is left exactly as due,
-     * so it retries every subsequent pass rather than the downgrade silently never taking visual
-     * effect.
+     * BiomeRepaint#DEAD_SCAR}, across exactly the {@code [paintedMinY, paintedMaxY]} band {@link
+     * BiomePaintData} recorded for it (clamped to the level's actual build height, covering both
+     * the legacy full-height sentinel and any genuine build-height change) rather than the column's
+     * full height, releasing its force-load ticket only once that repaint actually succeeds - a
+     * column whose chunk happens to not be loaded right now is left exactly as due, so it retries
+     * every subsequent pass rather than the downgrade silently never taking visual effect.
      */
     public static void processDowngrades(ServerLevel level) {
         long now = level.getGameTime();
         for (ChunkPos pos : BiomePaintData.peekDuePendingDowngrades(level, now)) {
-            if (!BiomeRepaint.paintColumn(level, pos, BiomeRepaint.DEAD_SCAR)) {
+            BiomePaintData.ColumnState state = BiomePaintData.getState(level, pos);
+            if (state == null) {
+                continue;
+            }
+            int minY = Math.max(level.getMinBuildHeight(), state.paintedMinY());
+            int maxY = Math.min(level.getMaxBuildHeight() - 1, state.paintedMaxY());
+            // An empty envelope means this column never actually reached BiomeRepaint (it was only
+            // claimed for BFS continuity outside the paint sphere) - nothing to revert, so skip
+            // straight to marking it downgraded rather than looping forever on a no-op repaint.
+            if (minY <= maxY && !BiomeRepaint.paintColumn(level, pos, BiomeRepaint.DEAD_SCAR, minY, maxY)) {
                 continue;
             }
             UUID ticketOwner = BiomePaintData.markDowngraded(level, pos);

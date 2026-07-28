@@ -17,19 +17,19 @@ import net.minecraft.world.level.biome.Biome;
 import org.slf4j.Logger;
 
 /**
- * Repaints a single loaded chunk column to one of Goal #5's corruption biomes via the same public
- * {@link FillBiomeCommand#fill} vanilla's own {@code /fillbiome} command calls, rather than
- * spamming that command as text. Confirmed against the actual 1.21.1 source: {@code fill} writes
- * the new biome into each touched {@code ChunkAccess} via {@code fillBiomesFromNoise}, marks it
- * unsaved, then unconditionally calls {@code ServerChunkCache#chunkMap.resendBiomesForChunks} -
- * no separate resend call is needed here. See {@code BiomePaintManager} for the budgeted,
- * incremental caller this is designed for - deliberately whole-chunk-at-a-time, since biome
- * storage is inherently 4x4x4-cell granular and there's no benefit to finer-grained budgeting the
- * way there is for block-level work.
+ * Repaints the {@code [minY, maxY]} band of a single loaded chunk column to one of Goal #5's
+ * corruption biomes via the same public {@link FillBiomeCommand#fill} vanilla's own
+ * {@code /fillbiome} command calls, rather than spamming that command as text. Confirmed against
+ * the actual 1.21.1 source: {@code fill} writes the new biome into each touched {@code
+ * ChunkAccess} via {@code fillBiomesFromNoise}, marks it unsaved, then unconditionally calls
+ * {@code ServerChunkCache#chunkMap.resendBiomesForChunks} - no separate resend call is needed
+ * here. See {@code BiomePaintManager} for the budgeted, incremental caller this is designed for,
+ * and {@link BiomePaintShape} for how the band is sized to a sphere around the organoid rather
+ * than the column's full height.
  *
  * <p>{@code fill} itself (not just its brigadier-parsing overload) rejects any single call whose
- * volume exceeds the {@code commandModificationBlockLimit} gamerule (32768 by default) - a
- * full-height 16x16 column trips this, so each column is painted in vertical bands sized to stay
+ * volume exceeds the {@code commandModificationBlockLimit} gamerule (32768 by default) - a tall
+ * enough band still trips this, so each column is painted in vertical sub-bands sized to stay
  * under whatever that gamerule is currently set to. This is the same limit spore-inquisition's own
  * {@code /fillbiome} calls work around, by raising the gamerule instead of banding.
  */
@@ -48,12 +48,12 @@ public final class BiomeRepaint {
     }
 
     /**
-     * Repaints one full-height chunk column. Returns false (and logs a warning on an actual
-     * failure) if the chunk isn't currently loaded to full status - callers should skip and retry
-     * next pass rather than treating this as fatal, since a forced non-ticking chunk can lag a
-     * tick or two behind the paint queue that requested it.
+     * Repaints the given {@code [minY, maxY]} band (inclusive) of a chunk column. Returns false
+     * (and logs a warning on an actual failure) if the chunk isn't currently loaded to full status
+     * - callers should skip and retry next pass rather than treating this as fatal, since a forced
+     * non-ticking chunk can lag a tick or two behind the paint queue that requested it.
      */
-    public static boolean paintColumn(ServerLevel level, ChunkPos pos, ResourceKey<Biome> biomeKey) {
+    public static boolean paintColumn(ServerLevel level, ChunkPos pos, ResourceKey<Biome> biomeKey, int minY, int maxY) {
         if (level.getChunkSource().getChunkNow(pos.x, pos.z) == null) {
             return false;
         }
@@ -64,8 +64,7 @@ public final class BiomeRepaint {
         int bandHeight = Math.max(1, blockLimit / (16 * 16));
 
         boolean allSucceeded = true;
-        int maxY = level.getMaxBuildHeight() - 1;
-        for (int bandMinY = level.getMinBuildHeight(); bandMinY <= maxY; bandMinY += bandHeight) {
+        for (int bandMinY = minY; bandMinY <= maxY; bandMinY += bandHeight) {
             int bandMaxY = Math.min(bandMinY + bandHeight - 1, maxY);
             BlockPos min = new BlockPos(pos.getMinBlockX(), bandMinY, pos.getMinBlockZ());
             BlockPos max = new BlockPos(pos.getMaxBlockX(), bandMaxY, pos.getMaxBlockZ());

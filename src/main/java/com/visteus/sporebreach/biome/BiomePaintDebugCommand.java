@@ -77,7 +77,7 @@ public final class BiomePaintDebugCommand {
         int painted = 0;
         for (ChunkCircleOffsets.ChunkOffset offset : offsets) {
             ChunkPos pos = new ChunkPos(center.x + offset.dx(), center.z + offset.dz());
-            if (BiomeRepaint.paintColumn(level, pos, biomeKey)) {
+            if (BiomeRepaint.paintColumn(level, pos, biomeKey, level.getMinBuildHeight(), level.getMaxBuildHeight() - 1)) {
                 painted++;
             }
         }

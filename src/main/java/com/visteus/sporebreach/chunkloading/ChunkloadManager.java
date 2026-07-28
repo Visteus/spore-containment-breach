@@ -58,7 +58,7 @@ public final class ChunkloadManager {
             return;
         }
         ChunkPos anchor = new ChunkPos(entity.blockPosition());
-        ChunkloadData.activate(level, ownerId, anchor, level.getGameTime(), null);
+        ChunkloadData.activate(level, ownerId, anchor, entity.blockPosition().getY(), level.getGameTime(), null);
         growOwner(level, ownerId, entry, ChunkloadData.getState(level, ownerId));
     }
 
@@ -72,7 +72,9 @@ public final class ChunkloadManager {
             return;
         }
         ChunkPos anchorChunk = new ChunkPos(anchor.chunkloadAnchorPos());
-        ChunkloadData.activate(level, ownerId, anchorChunk, level.getGameTime(), anchor.chunkloadOwnerBlockId());
+        ChunkloadData.activate(
+                level, ownerId, anchorChunk, anchor.chunkloadAnchorPos().getY(), level.getGameTime(), anchor.chunkloadOwnerBlockId()
+        );
         growOwner(level, ownerId, entry, ChunkloadData.getState(level, ownerId));
     }
 

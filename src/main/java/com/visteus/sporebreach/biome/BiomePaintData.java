@@ -47,6 +47,16 @@ public final class BiomePaintData extends PersistedData {
         private long pendingDowngradeDeadlineGameTime = -1;
         @Nullable
         private UUID ticketOwner;
+        /**
+         * Union of every claimant's requested paint band, in world Y - never shrinks while claimed
+         * (mirroring chunkload radius's own "only grows" behavior), so a farther-out claimant can't
+         * orphan area a closer one already painted. Sentinel-wide ({@link Integer#MIN_VALUE}/{@link
+         * Integer#MAX_VALUE}) until the first real claim, or for state loaded from a save predating
+         * this field - callers should clamp against the level's actual build height rather than
+         * special-casing the sentinel.
+         */
+        private int paintedMinY = Integer.MIN_VALUE;
+        private int paintedMaxY = Integer.MAX_VALUE;
 
         public Set<UUID> claimants() {
             return claimants;
@@ -64,15 +74,25 @@ public final class BiomePaintData extends PersistedData {
         public UUID ticketOwner() {
             return ticketOwner;
         }
+
+        public int paintedMinY() {
+            return paintedMinY;
+        }
+
+        public int paintedMaxY() {
+            return paintedMaxY;
+        }
     }
 
     /**
      * Result of {@link #claim}: whether the caller still needs to issue a physical force-load
      * ticket ({@code ticketOwner} was previously unset - e.g. brand new, or its last ticket was
-     * released after a completed downgrade), and whether the caller needs to (re)enqueue an actual
-     * repaint (brand new, or reactivated from a pending/completed downgrade).
+     * released after a completed downgrade), whether the caller needs to (re)enqueue an actual
+     * repaint (brand new, reactivated from a pending/completed downgrade, or the painted envelope
+     * grew to cover this claim), and the column's resulting painted envelope to actually pass to
+     * {@link BiomeRepaint#paintColumn}.
      */
-    public record ClaimResult(boolean needsTicket, boolean needsPaint) {
+    public record ClaimResult(boolean needsTicket, boolean needsPaint, int paintMinY, int paintMaxY) {
     }
 
     private static BiomePaintData instance;
@@ -99,7 +119,7 @@ public final class BiomePaintData extends PersistedData {
      * ChunkloadManager.forceBiomePaintChunk}), so a column already kept loaded by one owner's
      * ticket doesn't accumulate a redundant one per additional claimant.
      */
-    public static ClaimResult claim(ServerLevel level, ChunkPos pos, UUID ownerId) {
+    public static ClaimResult claim(ServerLevel level, ChunkPos pos, UUID ownerId, int minY, int maxY) {
         BiomePaintData data = get();
         Map<ChunkPos, ColumnState> columns = data.stateByDimension.computeIfAbsent(level.dimension(), key -> new HashMap<>());
         ColumnState state = columns.get(pos);
@@ -120,9 +140,19 @@ public final class BiomePaintData extends PersistedData {
             state.stage = BiomeStage.ACTIVE;
             state.pendingDowngradeDeadlineGameTime = -1;
         }
+
+        // Reactivating (fresh or from a downgrade) adopts this claim's band outright rather than
+        // unioning with whatever stale envelope was left over; an already-active column gaining
+        // another claimant only ever grows the envelope, never shrinks it.
+        int newMinY = isNew || !wasActive ? minY : Math.min(state.paintedMinY, minY);
+        int newMaxY = isNew || !wasActive ? maxY : Math.max(state.paintedMaxY, maxY);
+        boolean envelopeGrew = newMinY != state.paintedMinY || newMaxY != state.paintedMaxY;
+        state.paintedMinY = newMinY;
+        state.paintedMaxY = newMaxY;
+
         data.markDirty();
 
-        return new ClaimResult(needsTicket, isNew || !wasActive);
+        return new ClaimResult(needsTicket, isNew || !wasActive || envelopeGrew, state.paintedMinY, state.paintedMaxY);
     }
 
     /**
@@ -225,6 +255,8 @@ public final class BiomePaintData extends PersistedData {
                 columnTag.putLong("Pos", columnEntry.getKey().toLong());
                 columnTag.putString("Stage", state.stage.name());
                 columnTag.putLong("Deadline", state.pendingDowngradeDeadlineGameTime);
+                columnTag.putInt("PaintedMinY", state.paintedMinY);
+                columnTag.putInt("PaintedMaxY", state.paintedMaxY);
                 if (state.ticketOwner != null) {
                     columnTag.putUUID("TicketOwner", state.ticketOwner);
                 }
@@ -263,6 +295,14 @@ public final class BiomePaintData extends PersistedData {
                 state.pendingDowngradeDeadlineGameTime = columnTag.getLong("Deadline");
                 if (columnTag.hasUUID("TicketOwner")) {
                     state.ticketOwner = columnTag.getUUID("TicketOwner");
+                }
+                // Saves predating these tags keep the sentinel-wide default, which callers clamp to
+                // the level's actual build height rather than truncating an already-active column.
+                if (columnTag.contains("PaintedMinY")) {
+                    state.paintedMinY = columnTag.getInt("PaintedMinY");
+                }
+                if (columnTag.contains("PaintedMaxY")) {
+                    state.paintedMaxY = columnTag.getInt("PaintedMaxY");
                 }
                 ListTag claimants = columnTag.getList("Claimants", Tag.TAG_COMPOUND);
                 for (int k = 0; k < claimants.size(); k++) {
