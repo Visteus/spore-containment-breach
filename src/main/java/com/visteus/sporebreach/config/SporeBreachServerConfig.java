@@ -354,7 +354,7 @@ public final class SporeBreachServerConfig {
                                         " corruption biome as they chunkload-grow. Default true.")
                                 .define("biomePaintEnabled", true);
                         BIOME_PAINT_EXTRA_RADIUS_CHUNKS = builder
-                                .comment(" How many chunks past an organoid's own chunkload radius the biome ring extends.",
+                                .comment(" How many chunks past an organoid's own chunkload radius the biome painting should extend.",
                                         " Default 2.")
                                 .defineInRange("biomePaintExtraRadiusChunks", 2, 0, ChunkCircleOffsets.MAX_RADIUS);
                         BIOME_PAINT_COLUMNS_PER_PASS = builder

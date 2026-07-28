@@ -63,11 +63,12 @@ public final class ChunkloadData extends PersistedData {
     }
 
     public static void activate(
-            ServerLevel level, ChunkloadOwnerId ownerId, ChunkPos anchorChunk, long activationGameTime, ResourceLocation expectedBlockId
+            ServerLevel level, ChunkloadOwnerId ownerId, ChunkPos anchorChunk, int anchorY, long activationGameTime,
+            ResourceLocation expectedBlockId
     ) {
         ChunkloadData data = get();
         data.stateByDimension.computeIfAbsent(level.dimension(), key -> new HashMap<>())
-                .put(ownerId, new ChunkloadState(anchorChunk, activationGameTime, 0, expectedBlockId));
+                .put(ownerId, new ChunkloadState(anchorChunk, anchorY, activationGameTime, 0, expectedBlockId));
         data.markDirty();
     }
 
@@ -119,6 +120,7 @@ public final class ChunkloadData extends PersistedData {
 
                 ChunkloadState state = ownerEntry.getValue();
                 ownerTag.putLong("AnchorChunk", state.anchorChunk().toLong());
+                ownerTag.putInt("AnchorY", state.anchorY());
                 ownerTag.putLong("ActivationGameTime", state.activationGameTime());
                 ownerTag.putInt("LastIssuedRadius", state.lastIssuedRadius());
                 if (state.expectedBlockId() != null) {
@@ -161,12 +163,13 @@ public final class ChunkloadData extends PersistedData {
                 }
 
                 ChunkPos anchorChunk = new ChunkPos(ownerTag.getLong("AnchorChunk"));
+                int anchorY = ownerTag.contains("AnchorY") ? ownerTag.getInt("AnchorY") : ChunkloadState.ANCHOR_Y_UNSET;
                 long activationGameTime = ownerTag.getLong("ActivationGameTime");
                 int lastIssuedRadius = ownerTag.getInt("LastIssuedRadius");
                 ResourceLocation expectedBlockId = ownerTag.contains("ExpectedBlockId")
                         ? ResourceLocation.parse(ownerTag.getString("ExpectedBlockId"))
                         : null;
-                owners.put(ownerId, new ChunkloadState(anchorChunk, activationGameTime, lastIssuedRadius, expectedBlockId));
+                owners.put(ownerId, new ChunkloadState(anchorChunk, anchorY, activationGameTime, lastIssuedRadius, expectedBlockId));
             }
             stateByDimension.put(dimensionKey, owners);
         }
